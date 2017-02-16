@@ -33,10 +33,10 @@ Where *TEST_DIR* is the test name (e.g. *checksum*).
 
 ## checksum
 
-This demo schedules the computation of a simple checksum on one DPU.
-
-The host application generates a random file of 8MB and schedules one DPU to compute the checksum.
-It compares the provided result with the actual checksum value and prints out the DPU performances in number of instructions per processed byte.
+The host application generates a random file of 8MB, and schedules multiple DPUs co-processors to compute the checksum on this file.
+As sanity check it compares host result with the DPU results, and prints out the DPU performances:
+* 1) Total number of DPU cycles executed
+* 2) The number of DPU cycles per byte processed
  
 # SDK Documentation
 https://dev-zone.upmem.com/doc/
