@@ -33,7 +33,7 @@
 #define DPU_BINARY "bin/dpu/dpu_app.bin"
 
 
-#define NB_OF_DPUS 1
+#define NB_OF_DPUS 8
 #define NB_OF_TASKLETS_PER_DPU 16
 
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, "ERROR: "fmt"\n", ##__VA_ARGS__)
@@ -118,12 +118,13 @@ static void summarize_performance_of(dpu_t dpu, unsigned int nr_bytes) {
 */
 int main(int argc, char **argv) {
         dpu_t dpus[NB_OF_DPUS];
-        unsigned int each_tasklet;
-        unsigned int checksum = 0, theoretical_checksum = 0;
+        unsigned int each_tasklet, i;
+        unsigned int checksum[NB_OF_DPUS], theoretical_checksum = 0;
         /* Use 8MB of input. */
         const unsigned int file_size = 8 << 20;
         bool status = false;
 
+        printf("Init %d DPU(s)\n", NB_OF_DPUS);
         if (init_dpus(dpus) != 0) {
                 PRINT_ERROR("cannot initialize DPUs");
                 return -1;
@@ -132,32 +133,41 @@ int main(int argc, char **argv) {
         // Create an "input file" with arbitrary data.
         // Compute its theoretical checksum value.
         uint8_t * buffer = create_test_file(file_size, &theoretical_checksum);
-        post_file_to_dpu(dpus[0], buffer, file_size);
 
+        printf("Load input data\n");
+        for(i=0;i<NB_OF_DPUS;i++){
+            post_file_to_dpu(dpus[i], buffer, file_size);
+        }
+
+        printf("Run program on DPU(s) \n");
         if (run_dpus(dpus) != 0) {
                 PRINT_ERROR("cannot execute program correctly");
                 goto err;
         }
 
-        // Retrieve tasklet results and compute the final checksum.
-        for (each_tasklet = 0; each_tasklet < NB_OF_TASKLETS_PER_DPU; each_tasklet++) {
-                unsigned int tasklet_result = 0;
-                dpu_receive(dpus[0], each_tasklet, 0, &tasklet_result, sizeof(tasklet_result));
-                checksum += tasklet_result;
+        printf("Retreive results\n");
+        for(i=0;i<NB_OF_DPUS;i++){
+            checksum[i]=0;
+            // Retrieve tasklet results and compute the final checksum.
+            for (each_tasklet = 0; each_tasklet < NB_OF_TASKLETS_PER_DPU; each_tasklet++) {
+                    unsigned int tasklet_result = 0;
+                    dpu_receive(dpus[i], each_tasklet, 0, &tasklet_result, sizeof(tasklet_result));
+                    checksum[i] += tasklet_result;
+            }
         }
+        for(i=0;i<NB_OF_DPUS;i++){
+              summarize_performance_of(dpus[i], file_size);
+              printf("checksum computed by the DPU = 0x%08x\n", checksum[i]);
+              printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
 
-        summarize_performance_of(dpus[0], file_size);
-        printf("checksum computed by the DPU = 0x%08x\n", checksum);
-        printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
+              status = (checksum[i] == theoretical_checksum);
 
-        status = (checksum == theoretical_checksum);
-
-        if (status) {
-                printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
-        } else {
-                printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
+              if (status) {
+                      printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
+              } else {
+                      printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
+              }
         }
-
         if (free_dpus(dpus) != 0) {
                 PRINT_ERROR("cannot free DPUs");
                 return -1;
