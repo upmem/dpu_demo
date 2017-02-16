@@ -1,0 +1,10 @@
+// Schedule 16 tasklets to compute individual
+// checksums
+tasklet add 0..15 medium task_main 1
+// Post the input file size into the system mailbox
+sysmbox 1
+
+// DO NOT EDIT BELOW THIS POINT
+
+save $DIRECTORY/$NAME.json
+quit
