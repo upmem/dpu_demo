@@ -1,5 +1,9 @@
-# dpu_demo
-Examples of DPU programs using the UPMEM DPU SDK
+![UPMEM Logo](http://www.upmem.com/wp-content/uploads/2015/06/logo_upmem2.png)
+
+UPMEM Processing-In-Memory solution consist of a pool of programmable co-processors, the DPUs, integrated in the memory.
+
+# dpu_demo package
+Examples of DPU programs generated with UPMEM DPU SDK
 
 ## Requirements
 
