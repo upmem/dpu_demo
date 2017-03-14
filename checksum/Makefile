@@ -3,6 +3,10 @@ HOST_DIR := host
 BUILDDIR := obj
 TARGETDIR := bin
 
+ifndef $(DPU_TARGET_TYPE)
+DPU_TARGET_TYPE=FUNCTIONAL_SIMULATOR
+endif
+
 .PHONY: all remake dpu host clean clean_dpu clean_host
 .DEFAULT_GOAL := all
 
