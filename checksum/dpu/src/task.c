@@ -36,7 +36,7 @@
 #include <mbox.h>
 #include <mram.h>
 #include <alloc.h>
-#include <mram_ll.h>
+#include <mram.h>
 
 // Use blocks of 256 bytes
 #define BLOCK_SIZE_LOG2 8
@@ -67,7 +67,7 @@ int task_main() {
         /* Address of the current processing block in MRAM. */
         mram_addr_t current_mram_block_addr = (mram_addr_t) (tasklet_id << BLOCK_SIZE_LOG2);
         /* Initialize a local cache to store the MRAM block. */
-        uint8_t * cache = (uint8_t *) dma_alloc(BLOCK_SIZE);
+        uint8_t * cache = (uint8_t *) mem_alloc_dma(BLOCK_SIZE);
         unsigned int checksum = 0;
 
         for (;
@@ -75,7 +75,7 @@ int task_main() {
                 current_mram_block_addr += (BLOCK_SIZE << NR_TASKLETS_LOG2)
         ) {
                 /* Load cache with current MRAM block. */
-                mram_ll_read256(current_mram_block_addr, cache);
+                mram_read256(current_mram_block_addr, cache);
                 checksum += compute_checksum(cache);
         }
 

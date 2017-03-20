@@ -19,7 +19,7 @@ BINEXT      := bin
 
 #Flags, Libraries and Includes
 DBG         := -g
-CFLAGS      := -Wall -O1 $(DBG)
+CFLAGS      := -Wall -O2 $(DBG)
 LIB         := 
 INC         := -I$(INCDIR)
 
