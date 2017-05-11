@@ -37,6 +37,9 @@
 #include <mram.h>
 #include <alloc.h>
 #include <mram.h>
+#include <ktrace.h>
+
+#define printf ktrace
 
 // Use blocks of 256 bytes
 #define BLOCK_SIZE_LOG2 8
@@ -51,9 +54,9 @@
 * @return the sum of all bytes within this block
 */
 static unsigned int compute_checksum(uint8_t *buffer) {
-        unsigned int i, result = 0;
-        for (i = 0; i < BLOCK_SIZE; i++) result += buffer[i];
-        return result;
+    unsigned int i, result = 0;
+    for (i = 0; i < BLOCK_SIZE; i++) result += buffer[i];
+    return result;
 }
 
 /**
@@ -62,24 +65,25 @@ static unsigned int compute_checksum(uint8_t *buffer) {
 * @return the checksum result
 */
 int task_main() {
-        unsigned int tasklet_id = me();
-        unsigned int file_size = *((uint32_t *) sys_mbox_recv());
-        /* Address of the current processing block in MRAM. */
-        mram_addr_t current_mram_block_addr = (mram_addr_t) (tasklet_id << BLOCK_SIZE_LOG2);
-        /* Initialize a local cache to store the MRAM block. */
-        uint8_t * cache = (uint8_t *) mem_alloc_dma(BLOCK_SIZE);
-        unsigned int checksum = 0;
+    unsigned int tasklet_id = me();
+    unsigned int file_size = *((uint32_t *) sys_mbox_recv());
+    /* Address of the current processing block in MRAM. */
+    mram_addr_t current_mram_block_addr = (mram_addr_t)(tasklet_id << BLOCK_SIZE_LOG2);
+    /* Initialize a local cache to store the MRAM block. */
+    uint8_t *cache = (uint8_t *) mem_alloc_dma(BLOCK_SIZE);
+    unsigned int checksum = 0;
 
-        for (;
-                current_mram_block_addr < file_size;
-                current_mram_block_addr += (BLOCK_SIZE << NR_TASKLETS_LOG2)
-        ) {
-                /* Load cache with current MRAM block. */
-                mram_read256(current_mram_block_addr, cache);
-                checksum += compute_checksum(cache);
-        }
+    for (;
+            current_mram_block_addr < file_size;
+            current_mram_block_addr += (BLOCK_SIZE << NR_TASKLETS_LOG2)
+            ) {
+        /* Load cache with current MRAM block. */
+        mram_read256(current_mram_block_addr, cache);
+        checksum += compute_checksum(cache);
+    }
 
-        /* Send the resulting checksum to host application. */
-        mbox_send(&checksum, sizeof(checksum));
-        return checksum;
+    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, checksum);
+    /* Send the resulting checksum to host application. */
+    mbox_send(&checksum, sizeof(checksum));
+    return checksum;
 }

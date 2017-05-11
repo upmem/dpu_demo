@@ -2,6 +2,7 @@ DPU_DIR := dpu
 HOST_DIR := host
 BUILDDIR := obj
 TARGETDIR := bin
+LOGDIR := log
 
 ifndef $(DPU_TARGET_TYPE)
 DPU_TARGET_TYPE=FUNCTIONAL_SIMULATOR
@@ -24,6 +25,7 @@ clean:
 
 cleaner: clean
 	@$(RM) -rf $(TARGETDIR)
+	@$(RM) -rf $(LOGDIR)
 
 clean_dpu:
 	$(MAKE) -C $(DPU_DIR) cleaner

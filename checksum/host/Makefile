@@ -9,6 +9,7 @@ SRCDIR      := src
 INCDIR      := inc
 BUILDDIR    := ../obj/host
 TARGETDIR   := ../bin/host
+LOGDIR      := ../log/host
 SRCEXT      := c
 DEPEXT      := d
 OBJEXT      := o
@@ -25,7 +26,7 @@ INCDEP      := -I$(INCDIR)
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
 
-#Defauilt Make
+#Default Make
 all: directories $(TARGETDIR)/$(TARGET)
 
 #Remake
@@ -35,14 +36,16 @@ remake: cleaner all
 directories:
 	@mkdir -p $(TARGETDIR)
 	@mkdir -p $(BUILDDIR)
+	@mkdir -p $(LOGDIR)
 
-#Clean only Objecst
+#Clean only Objects
 clean:
 	@$(RM) -rf $(BUILDDIR)
 
 #Full Clean, Objects and Binaries
 cleaner: clean
 	@$(RM) -rf $(TARGETDIR)
+	@$(RM) -rf $(LOGDIR)
 
 #Pull in dependency info for *existing* .o files
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
