@@ -7,7 +7,7 @@ Examples of DPU programs generated with UPMEM DPU SDK
 
 # Requirements
 
- * The UPMEM DPU SDK, version 2017.1.1-EAP or later
+ * The UPMEM DPU SDK, version 2017.1.2-EAP or later
  * Gnu make and gcc, to build the application
 
 #Building the programs
