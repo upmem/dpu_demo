@@ -1,7 +1,14 @@
-// Schedule 16 tasklets to compute individual
-// checksums
+//System configuration file
+
+//Create a system with 16 tasklets (0 to 15) to compute individual checksums
+//Stack_size=medium (512 bytes)
+//entry_point=task_main (for each of the 16 tasklets)
+//mailbox_size=1 (One 32-bits word per tasklet)
+
 tasklet add 0..15 medium task_main 1
-// Post the input file size into the system mailbox
+
+// Post the input file size into the system mailbox (One 32-bits word), accessible to any thread
+
 sysmbox 1
 
 // DO NOT EDIT BELOW THIS POINT
