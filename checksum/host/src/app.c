@@ -115,10 +115,11 @@ static unsigned char *create_test_file(unsigned int nr_bytes, unsigned int *chec
 * @param dpu the target DPU
 * @param buffer the buffer containing the test file
 * @param nr_bytes the test file size, in bytes
+* @return whether the post was successful
 */
-static void post_file_to_dpu(dpu_t dpu, unsigned char *buffer, unsigned int nr_bytes) {
-    copy_to_dpu(dpu, buffer, 0, (size_t) nr_bytes);
-    dpu_post(dpu, ANY_TASKLET, 0, &nr_bytes, sizeof(nr_bytes));
+static bool post_file_to_dpu(dpu_t dpu, unsigned char *buffer, unsigned int nr_bytes) {
+    return copy_to_dpu(dpu, buffer, 0, (size_t) nr_bytes) &&
+            dpu_post(dpu, ANY_TASKLET, 0, &nr_bytes, sizeof(nr_bytes));
 }
 
 static void summarize_performance_of(dpu_t dpu, unsigned int nr_bytes) {
@@ -164,7 +165,10 @@ int main(int argc, char **argv) {
 
     printf("Load input data\n");
     for (i = 0; i < NB_OF_DPUS; i++) {
-        post_file_to_dpu(dpus[i], buffer, file_size);
+        if (!post_file_to_dpu(dpus[i], buffer, file_size)) {
+            PRINT_ERROR("cannot post file to DPU correctly");
+            goto err;
+        }
     }
 
     printf("Run program on DPU(s) \n");
@@ -188,7 +192,10 @@ int main(int argc, char **argv) {
         // Retrieve tasklet results and compute the final checksum.
         for (each_tasklet = 0; each_tasklet < NB_OF_TASKLETS_PER_DPU; each_tasklet++) {
             unsigned int tasklet_result = 0;
-            dpu_receive(dpus[i], each_tasklet, 0, &tasklet_result, sizeof(tasklet_result));
+            if (!dpu_receive(dpus[i], each_tasklet, 0, &tasklet_result, sizeof(tasklet_result))) {
+                PRINT_ERROR("cannot receive DPU results correctly");
+                goto err;
+            }
             checksum[i] += tasklet_result;
         }
     }
