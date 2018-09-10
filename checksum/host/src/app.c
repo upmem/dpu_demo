@@ -18,7 +18,7 @@
 * @file app.c
 * @brief Template for a Host Application Source File.
 *
-* The macros DPU_BINARY, NB_OF_DPUS and NB_OF_TASKLETS_PER_DPU are directly
+* The macros DPU_BINARY and NB_OF_TASKLETS_PER_DPU are directly
 * used in the static functions, and are not passed as arguments of these functions.
 */
 
@@ -39,7 +39,6 @@
 // changing any file location, just uncomment the following define:
 #define DPU_LOG_DIRECTORY "log/host/"
 
-#define NB_OF_DPUS 8
 #define NB_OF_TASKLETS_PER_DPU 16
 
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, "ERROR: "fmt"\n", ##__VA_ARGS__)
@@ -47,6 +46,13 @@
 #ifndef DPU_TYPE
 #define DPU_TYPE FUNCTIONAL_SIMULATOR
 #endif /* !DPU_TYPE */
+#ifdef DPU_PROFILE
+#define STR(a) #a
+#define STRINGIFY(a) STR(a)
+#define DPU_PROFILE_STR STRINGIFY(DPU_PROFILE)
+#else
+#define DPU_PROFILE_STR ""
+#endif /* !DPU_PROFILE */
 
 #ifndef DPU_BINARY
 
@@ -67,27 +73,20 @@
 /**
 * @brief Allocate and initialize the DPUs.
 *
-* @param dpus an array to store the DPU instances
+* @param rank the unique identifier of the allocated rank
 * @param dpu_type the target type of the DPUs
 * @return 0 in case of success, -1 otherwise.
 */
-static int init_dpus(dpu_t *dpus, dpu_type_t dpu_type);
-
-/**
-* @brief Free the allocated DPUs.
-*
-* @param dpus an array of the DPUs to be freed
-* @return 0 in case of success, -1 otherwise.
-*/
-static int free_dpus(dpu_t *dpus);
+static int init_dpus(dpu_rank_t *rank, dpu_type_t dpu_type);
 
 /**
 * @brief Run the DPUs in parallel, until the end of their execution.
 *
-* @param dpus an array of the DPUs to be run
+* @param rank the targeted rank
+* @param nr_of_dpus number of dpus in the rank
 * @return 0 in case of success, -1 otherwise.
 */
-static int run_dpus(dpu_t *dpus);
+static int run_dpus(dpu_rank_t rank, uint32_t nr_of_dpus);
 
 static unsigned char test_file[64 << 20];
 
@@ -118,23 +117,24 @@ static unsigned char *create_test_file(unsigned int nr_bytes, unsigned int *chec
 * @return whether the post was successful
 */
 static bool post_file_to_dpu(dpu_t dpu, unsigned char *buffer, unsigned int nr_bytes) {
-    return copy_to_dpu(dpu, buffer, 0, (size_t) nr_bytes) &&
-            dpu_post(dpu, ANY_TASKLET, 0, &nr_bytes, sizeof(nr_bytes));
+    return dpu_copy_to_individual(dpu, buffer, 0, (size_t) nr_bytes) == DPU_API_SUCCESS &&
+            dpu_tasklet_post_individual(dpu, ANY_TASKLET, 0, &nr_bytes, sizeof(nr_bytes)) == DPU_API_SUCCESS;
 }
 
-static void summarize_performance_of(dpu_t dpu, unsigned int nr_bytes) {
-    double time = dpu_time(dpu);
-    printf("DPU execution time  = %g cc\n", time);
-    printf("performance         = %g cc/byte\n", time / nr_bytes);
+static void summarize_performance_of(dpu_t dpu, unsigned int nr_bytes, uint32_t cycles) {
+    double cc = cycles;
+    printf("DPU execution time  = %g cc\n", cc);
+    printf("performance         = %g cc/byte\n", cc / nr_bytes);
 }
 
 /**
 * @brief Main of the Host Application.
 */
 int main(int argc, char **argv) {
-    dpu_t dpus[NB_OF_DPUS];
+    dpu_rank_t rank;
+    uint32_t nr_of_dpus;
     unsigned int each_tasklet, i;
-    unsigned int checksum[NB_OF_DPUS], theoretical_checksum = 0;
+    unsigned int theoretical_checksum = 0;
     /* Use 8MB of input. */
     const unsigned int file_size = 8 << 20;
     bool status = false;
@@ -146,65 +146,78 @@ int main(int argc, char **argv) {
 
         if (strcmp(dpu_type_string, "fsim") == 0) {
             dpu_type = FUNCTIONAL_SIMULATOR;
-        } else if (strcmp(dpu_type_string, "hsim") == 0) {
-            dpu_type = HSIM;
+        } else if (strcmp(dpu_type_string, "asic") == 0) {
+            dpu_type = ASIC;
         } else if (strcmp(dpu_type_string, "fpga") == 0) {
             dpu_type = FPGA;
         }
     }
 
-    printf("Init %d DPU(s)\n", NB_OF_DPUS);
-    if (init_dpus(dpus, dpu_type) != 0) {
+    if (init_dpus(&rank, dpu_type) != 0) {
         PRINT_ERROR("cannot initialize DPUs");
         return -1;
     }
+    if (dpu_get_nr_of_dpus_in(rank, &nr_of_dpus) != DPU_API_SUCCESS)
+        goto err;
+    printf("Allocated %d DPU(s)\n", nr_of_dpus);
 
     // Create an "input file" with arbitrary data.
     // Compute its theoretical checksum value.
     uint8_t *buffer = create_test_file(file_size, &theoretical_checksum);
 
     printf("Load input data\n");
-    for (i = 0; i < NB_OF_DPUS; i++) {
-        if (!post_file_to_dpu(dpus[i], buffer, file_size)) {
+    for (i = 0; i < nr_of_dpus; i++) {
+        if (!post_file_to_dpu(dpu_get_id(rank, i), buffer, file_size)) {
             PRINT_ERROR("cannot post file to DPU correctly");
             goto err;
         }
     }
 
     printf("Run program on DPU(s) \n");
-    if (run_dpus(dpus) != 0) {
+    if (run_dpus(rank, nr_of_dpus) != 0) {
         PRINT_ERROR("cannot execute program correctly");
         goto err;
     }
 
     printf("Display DPU Logs\n");
-    for (i = 0; i < NB_OF_DPUS; i++) {
+    for (i = 0; i < nr_of_dpus; i++) {
         printf("DPU#%d:\n", i);
-        if (!dpulog_read_for_dpu(dpus[i], stdout)) {
+        if (!dpulog_read_for_dpu(dpu_get_id(rank, i), stdout)) {
             PRINT_ERROR("cannot display DPU log correctly");
             goto err;
         }
     }
 
     printf("Retrieve results\n");
-    for (i = 0; i < NB_OF_DPUS; i++) {
-        checksum[i] = 0;
+    struct result {
+        uint32_t checksum;
+        uint32_t cycles;
+    } *results;
+    results = calloc(sizeof(results[0]), nr_of_dpus);
+    if (!results)
+        goto err;
+    for (i = 0; i < nr_of_dpus; i++) {
+        results[i].checksum = 0;
+        results[i].cycles = 0;
         // Retrieve tasklet results and compute the final checksum.
         for (each_tasklet = 0; each_tasklet < NB_OF_TASKLETS_PER_DPU; each_tasklet++) {
-            unsigned int tasklet_result = 0;
-            if (!dpu_receive(dpus[i], each_tasklet, 0, &tasklet_result, sizeof(tasklet_result))) {
+            struct result tasklet_result = { 0 };
+            if (dpu_tasklet_receive_individual(dpu_get_id(rank, i), each_tasklet, 0, (uint32_t *)&tasklet_result, sizeof(tasklet_result)) != DPU_API_SUCCESS) {
                 PRINT_ERROR("cannot receive DPU results correctly");
+                free(results);
                 goto err;
             }
-            checksum[i] += tasklet_result;
+            results[i].checksum += tasklet_result.checksum;
+            if (tasklet_result.cycles > results[i].cycles)
+                results[i].cycles = tasklet_result.cycles;
         }
     }
-    for (i = 0; i < NB_OF_DPUS; i++) {
-        summarize_performance_of(dpus[i], file_size);
-        printf("checksum computed by the DPU = 0x%08x\n", checksum[i]);
+    for (i = 0; i < nr_of_dpus; i++) {
+        summarize_performance_of(dpu_get_id(rank, i), file_size, results[i].cycles);
+        printf("checksum computed by the DPU = 0x%08x\n", results[i].checksum);
         printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
 
-        status = (checksum[i] == theoretical_checksum);
+        status = (results[i].checksum == theoretical_checksum);
 
         if (status) {
             printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
@@ -212,7 +225,8 @@ int main(int argc, char **argv) {
             printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
         }
     }
-    if (free_dpus(dpus) != 0) {
+    free(results);
+    if (dpu_free(rank) != DPU_API_SUCCESS) {
         PRINT_ERROR("cannot free DPUs");
         return -1;
     }
@@ -220,11 +234,11 @@ int main(int argc, char **argv) {
     return status ? 0 : 1;
 
     err:
-    free_dpus(dpus);
+    dpu_free(rank);
     return -1;
 }
 
-static int init_dpus(dpu_t *dpus, dpu_type_t dpu_type) {
+static int init_dpus(dpu_rank_t *rank, dpu_type_t dpu_type) {
     dpu_logging_config_t log_config = {
             .source = KTRACE,
             .destination_directory_name = DPU_LOG_DIRECTORY
@@ -232,68 +246,36 @@ static int init_dpus(dpu_t *dpus, dpu_type_t dpu_type) {
 
     struct dpu_param params = {
             .type = dpu_type,
+            .profile = DPU_PROFILE_STR,
             .logging_config = &log_config
     };
 
-    for (int each_dpu = 0; each_dpu < NB_OF_DPUS; ++each_dpu) {
-        if ((dpus[each_dpu] = dpu_alloc(&params)) == NO_DPU_AVAILABLE)
-            goto err;
+    if (dpu_alloc(&params, rank) != DPU_API_SUCCESS)
+        return -1;
 
-        if (!dpu_load(dpus[each_dpu], DPU_BINARY))
-            goto err;
+    if (dpu_load_all(*rank, DPU_BINARY) != DPU_API_SUCCESS) {
+        dpu_free(*rank);
+        return -1;
     }
-
-    return 0;
-
-    err:
-    for (int each_dpu = 0; each_dpu < NB_OF_DPUS; ++each_dpu) {
-        if (dpus[each_dpu] == NO_DPU_AVAILABLE)
-            break;
-        dpu_free(dpus[each_dpu]);
-    }
-
-    return -1;
-}
-
-static int free_dpus(dpu_t *dpus) {
-    for (int each_dpu = 0; each_dpu < NB_OF_DPUS; ++each_dpu)
-        dpu_free(dpus[each_dpu]);
 
     return 0;
 }
 
-static int run_dpus(dpu_t *dpus) {
-    int nb_of_booted_dpus = 0;
-    int nb_of_stopped_dpus = 0;
+static int run_dpus(dpu_rank_t rank, uint32_t nr_of_dpus) {
+    uint32_t nb_of_running_dpus = 0;
     int res = 0;
 
-    for (int each_dpu = 0; each_dpu < NB_OF_DPUS; ++each_dpu) {
-        if (!dpu_boot(dpus[each_dpu], NO_WAIT)) {
-            res = -1;
-            break;
-        }
-        ++nb_of_booted_dpus;
-    }
+    if (dpu_boot_all(rank, ASYNCHRONOUS) != DPU_API_SUCCESS)
+        return -1;
 
+    dpu_run_status_t *status = calloc(sizeof(dpu_run_status_t), nr_of_dpus);
+    if (!status)
+        return -1;
     do {
-        nb_of_stopped_dpus = 0;
-        for (int each_booted_dpu = 0; each_booted_dpu < nb_of_booted_dpus; ++each_booted_dpu) {
-            dpu_run_status_t status = dpu_get_status(dpus[each_booted_dpu]);
-            switch (status) {
-                case STATUS_RUNNING:
-                    break;
-                case STATUS_IDLE:
-                    ++nb_of_stopped_dpus;
-                    break;
-                case STATUS_ERROR:
-                case STATUS_INVALID_DPU:
-                    res = -1;
-                    ++nb_of_stopped_dpus;
-                    break;
-            }
-        }
-    } while (nb_of_stopped_dpus != nb_of_booted_dpus);
+        dpu_get_all_status(rank, status, &nb_of_running_dpus);
+    } while (nb_of_running_dpus != 0);
 
+    free(status);
     return res;
 }
 

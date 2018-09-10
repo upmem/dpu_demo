@@ -38,6 +38,7 @@
 #include <alloc.h>
 #include <mram.h>
 #include <ktrace.h>
+#include <perfcounter.h>
 
 #define printf ktrace
 
@@ -67,11 +68,16 @@ static unsigned int compute_checksum(uint8_t *buffer) {
 int task_main() {
     unsigned int tasklet_id = me();
     unsigned int file_size = *((uint32_t *) sys_mbox_recv());
+    if (tasklet_id == 0) /* Initialize once the cycle counter */
+        perfcounter_config(COUNT_CYCLES, true);
     /* Address of the current processing block in MRAM. */
     mram_addr_t current_mram_block_addr = (mram_addr_t)(tasklet_id << BLOCK_SIZE_LOG2);
     /* Initialize a local cache to store the MRAM block. */
     uint8_t *cache = (uint8_t *) mem_alloc_dma(BLOCK_SIZE);
-    unsigned int checksum = 0;
+    struct result {
+        uint32_t checksum;
+        uint32_t cycles;
+    } result = { 0 };
 
     for (;
             current_mram_block_addr < file_size;
@@ -79,11 +85,12 @@ int task_main() {
             ) {
         /* Load cache with current MRAM block. */
         mram_read256(current_mram_block_addr, cache);
-        checksum += compute_checksum(cache);
+        result.checksum += compute_checksum(cache);
     }
-
-    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, checksum);
-    /* Send the resulting checksum to host application. */
-    mbox_send(&checksum, sizeof(checksum));
-    return checksum;
+    /* keep the 32-bit LSB on the 64-bit cycle counter */
+    result.cycles = perfcounter_get();
+    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result.checksum);
+    /* Send the resulting checksum and cycle count to host application. */
+    mbox_send(&result, sizeof(result));
+    return result.checksum;
 }
