@@ -13,7 +13,7 @@ BUILDDIR    := ../obj/dpu
 TARGETDIR   := ../bin/dpu
 SRCEXT      := c
 ASMEXT      := s
-OBJEXT      := ipr
+OBJEXT      := o
 CFGEXT      := json
 BINEXT      := bin
 
@@ -53,15 +53,15 @@ $(EXEC): $(BUILDDIR)/$(BOOTSTRAP).$(OBJEXT) $(C_OBJECTS) $(ASM_OBJECTS)
 
 #Assemble from C sources
 $(C_OBJECTS): $(BUILDDIR)/%.$(OBJEXT) : $(BUILDDIR)/%.$(ASMEXT)
-	$(CC) -s -f IPR -o $@ $< -I$(BUILDDIR)
+	$(CC) -s -f ELF -o $@ $< -I$(BUILDDIR)
 
 #Assemble from ASM sources
 $(ASM_OBJECTS): $(BUILDDIR)/%.$(OBJEXT) : $(SRCDIR)/%.$(ASMEXT)
-	$(CC) -s -f IPR -o $@ $< -I$(BUILDDIR)
+	$(CC) -s -f ELF -o $@ $< -I$(BUILDDIR)
 
 #Assemble bootstrap
 $(BUILDDIR)/$(BOOTSTRAP).$(OBJEXT): $(BUILDDIR)/$(BOOTSTRAP).$(ASMEXT)
-	$(CC) -s -f IPR -o $@ $< -I$(BUILDDIR)
+	$(CC) -s -f ELF -o $@ $< -I$(BUILDDIR)
 
 #Compile
 $(BUILDDIR)/%.$(ASMEXT): $(SRCDIR)/%.$(SRCEXT)
