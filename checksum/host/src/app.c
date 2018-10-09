@@ -147,9 +147,9 @@ int main(int argc, char **argv) {
         if (strcmp(dpu_type_string, "fsim") == 0) {
             dpu_type = FUNCTIONAL_SIMULATOR;
         } else if (strcmp(dpu_type_string, "asic") == 0) {
-            dpu_type = ASIC;
+            dpu_type = HW;
         } else if (strcmp(dpu_type_string, "fpga") == 0) {
-            dpu_type = FPGA;
+            dpu_type = HW;
         }
     }
 
