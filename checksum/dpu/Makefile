@@ -31,7 +31,7 @@ ASM_SOURCES := $(shell find $(SRCDIR) -type f -name *.$(ASMEXT))
 C_OBJECTS   := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
 ASM_OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(ASM_SOURCES:.$(ASMEXT)=.$(OBJEXT)))
 
-BOOTSTRAP   := bootstrap
+BOOTSTRAP   := __bootstrap
 
 EXEC        := $(TARGETDIR)/$(TARGET).$(BINEXT)
 
