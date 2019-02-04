@@ -1,7 +1,8 @@
 #Compiler and Linker
-CC          := dpucc
+CC          := clang --target=dpu-upmem-dpurte
 #Configurator
 KCONF       := dpukconfig
+DPUCC       := dpucc
 
 #The Target Binary Program
 TARGET      := dpu_app
@@ -49,27 +50,22 @@ directories:
 
 #Link
 $(EXEC): $(BUILDDIR)/$(BOOTSTRAP).$(OBJEXT) $(C_OBJECTS) $(ASM_OBJECTS)
-	$(CC) -l -o $@ $^ $(LIB) $(DBG)
-
-#Assemble from C sources
-$(C_OBJECTS): $(BUILDDIR)/%.$(OBJEXT) : $(BUILDDIR)/%.$(ASMEXT)
-	$(CC) -s -f ELF -o $@ $< -I$(BUILDDIR)
-
-#Assemble from ASM sources
-$(ASM_OBJECTS): $(BUILDDIR)/%.$(OBJEXT) : $(SRCDIR)/%.$(ASMEXT)
-	$(CC) -s -f ELF -o $@ $< -I$(BUILDDIR)
+	$(CC) -o $@ $^ $(LIB) $(DBG)
 
 #Assemble bootstrap
 $(BUILDDIR)/$(BOOTSTRAP).$(OBJEXT): $(BUILDDIR)/$(BOOTSTRAP).$(ASMEXT)
-	$(CC) -s -f ELF -o $@ $< -I$(BUILDDIR)
+	$(CC) -c -o $@ $(CFLAGS) $^ $(INC)
 
 #Compile
-$(BUILDDIR)/%.$(ASMEXT): $(SRCDIR)/%.$(SRCEXT)
+$(ASM_OBJECTS): $(BUILDDIR)/%.$(OBJEXT) : $(SRCDIR)/%.$(ASMEXT)
+	$(CC) -c -o $@ $(CFLAGS) $^ $(INC)
+
+$(C_OBJECTS): $(BUILDDIR)/%.$(OBJEXT) : $(SRCDIR)/%.$(SRCEXT)
 	$(CC) -c -o $@ $(CFLAGS) $^ $(INC)
 
 #Generate Bootstrap
 $(BUILDDIR)/$(BOOTSTRAP).$(ASMEXT): $(BUILDDIR)/$(CFG_NAME).$(CFGEXT)
-	$(CC) -xc $^ -o $(BUILDDIR)
+	$(DPUCC) -xc $^ -o $(BUILDDIR)
 
 #Build configuration
 $(BUILDDIR)/$(CFG_NAME).$(CFGEXT): $(CFG_SCRIPT)
