@@ -40,13 +40,27 @@
 #include <ktrace.h>
 #include <perfcounter.h>
 
+/*
+ * Create a system with 16 tasklets (0 to 15) to compute individual checksums
+ * with a 512-byte stack and two 32-bits words of mailbox per tasklet
+ */
+#define NR_TASKLETS_LOG2 4
+#define NR_TASKLETS      16
+#define TASKLETS_INITIALIZER \
+    TASKLETS(NR_TASKLETS, task_main, 512, 2)
+#include <rt.h>
+
+/*
+ * Post the input file size into the system mailbox (One 32-bits word),
+ * accessible to any thread.
+ */
+SYSTEM_MAILBOX_INITIALIZER(1);
+
 #define printf ktrace
 
 // Use blocks of 256 bytes
 #define BLOCK_SIZE_LOG2 8
 #define BLOCK_SIZE (1 << BLOCK_SIZE_LOG2)
-// This program uses 16 tasklets
-#define NR_TASKLETS_LOG2 4
 
 /**
 * @fn compute_checksum
