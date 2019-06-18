@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2014-2017 - uPmem
+* Copyright (c) 2014-2019 - UPMEM
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <dpu.h>
-#include <dpulog.h>
+#include <dpu_log.h>
 
 // Define the DPU Binary path as DPU_BINARY here.
 // If you want to launch the application from the root of the project, without
@@ -77,7 +77,7 @@
 * @param dpu_type the target type of the DPUs
 * @return 0 in case of success, -1 otherwise.
 */
-static int init_dpus(dpu_rank_t *rank, dpu_type_t dpu_type);
+static int init_dpus(struct dpu_rank_t **rank, dpu_type_t dpu_type);
 
 /**
 * @brief Run the DPUs in parallel, until the end of their execution.
@@ -86,7 +86,7 @@ static int init_dpus(dpu_rank_t *rank, dpu_type_t dpu_type);
 * @param nr_of_dpus number of dpus in the rank
 * @return 0 in case of success, -1 otherwise.
 */
-static int run_dpus(dpu_rank_t rank, uint32_t nr_of_dpus);
+static int run_dpus(struct dpu_rank_t *rank, uint32_t nr_of_dpus);
 
 static unsigned char test_file[64 << 20];
 
@@ -116,12 +116,12 @@ static unsigned char *create_test_file(unsigned int nr_bytes, unsigned int *chec
 * @param nr_bytes the test file size, in bytes
 * @return whether the post was successful
 */
-static bool post_file_to_dpu(dpu_t dpu, unsigned char *buffer, unsigned int nr_bytes) {
-    return dpu_copy_to_individual(dpu, buffer, 0, (size_t) nr_bytes) == DPU_API_SUCCESS &&
-            dpu_tasklet_post_individual(dpu, ANY_TASKLET, 0, &nr_bytes, sizeof(nr_bytes)) == DPU_API_SUCCESS;
+static bool post_file_to_dpu(struct dpu_t *dpu, unsigned char *buffer, unsigned int nr_bytes) {
+    return dpu_copy_to_dpu(dpu, buffer, 0, (size_t) nr_bytes) == DPU_API_SUCCESS &&
+            dpu_tasklet_post(dpu, ANY_TASKLET, 0, &nr_bytes, sizeof(nr_bytes)) == DPU_API_SUCCESS;
 }
 
-static void summarize_performance_of(dpu_t dpu, unsigned int nr_bytes, uint32_t cycles) {
+static void summarize_performance_of(struct dpu_t *dpu, unsigned int nr_bytes, uint32_t cycles) {
     double cc = cycles;
     printf("DPU execution time  = %g cc\n", cc);
     printf("performance         = %g cc/byte\n", cc / nr_bytes);
@@ -131,9 +131,10 @@ static void summarize_performance_of(dpu_t dpu, unsigned int nr_bytes, uint32_t 
 * @brief Main of the Host Application.
 */
 int main(int argc, char **argv) {
-    dpu_rank_t rank;
+    struct dpu_rank_t *rank;
+    struct dpu_t *dpu;
     uint32_t nr_of_dpus;
-    unsigned int each_tasklet, i;
+    unsigned int each_tasklet;
     unsigned int theoretical_checksum = 0;
     /* Use 8MB of input. */
     const unsigned int file_size = 8 << 20;
@@ -166,8 +167,8 @@ int main(int argc, char **argv) {
     uint8_t *buffer = create_test_file(file_size, &theoretical_checksum);
 
     printf("Load input data\n");
-    for (i = 0; i < nr_of_dpus; i++) {
-        if (!post_file_to_dpu(dpu_get_id(rank, i), buffer, file_size)) {
+    DPU_FOREACH(rank, dpu) {
+        if (!post_file_to_dpu(dpu, buffer, file_size)) {
             PRINT_ERROR("cannot post file to DPU correctly");
             goto err;
         }
@@ -180,9 +181,9 @@ int main(int argc, char **argv) {
     }
 
     printf("Display DPU Logs\n");
-    for (i = 0; i < nr_of_dpus; i++) {
-        printf("DPU#%d:\n", i);
-        if (!dpulog_read_for_dpu(dpu_get_id(rank, i), stdout)) {
+    DPU_FOREACH(rank, dpu) {
+        printf("DPU#%d:\n", dpu_get_member_id(dpu));
+        if (!dpulog_read_for_dpu(dpu, stdout)) {
             PRINT_ERROR("cannot display DPU log correctly");
             goto err;
         }
@@ -193,37 +194,42 @@ int main(int argc, char **argv) {
         uint32_t checksum;
         uint32_t cycles;
     } *results;
+    struct result *result_ptr; 
     results = calloc(sizeof(results[0]), nr_of_dpus);
     if (!results)
         goto err;
-    for (i = 0; i < nr_of_dpus; i++) {
-        results[i].checksum = 0;
-        results[i].cycles = 0;
+    result_ptr = results;
+    DPU_FOREACH(rank, dpu) {
+        result_ptr->checksum = 0;
+        result_ptr->cycles = 0;
         // Retrieve tasklet results and compute the final checksum.
         for (each_tasklet = 0; each_tasklet < NB_OF_TASKLETS_PER_DPU; each_tasklet++) {
             struct result tasklet_result = { 0 };
-            if (dpu_tasklet_receive_individual(dpu_get_id(rank, i), each_tasklet, 0, (uint32_t *)&tasklet_result, sizeof(tasklet_result)) != DPU_API_SUCCESS) {
+            if (dpu_tasklet_receive(dpu, each_tasklet, 0, (uint32_t *)&tasklet_result, sizeof(tasklet_result)) != DPU_API_SUCCESS) {
                 PRINT_ERROR("cannot receive DPU results correctly");
                 free(results);
                 goto err;
             }
-            results[i].checksum += tasklet_result.checksum;
-            if (tasklet_result.cycles > results[i].cycles)
-                results[i].cycles = tasklet_result.cycles;
+            result_ptr->checksum += tasklet_result.checksum;
+            if (tasklet_result.cycles > result_ptr->cycles)
+                result_ptr->cycles = tasklet_result.cycles;
         }
+	result_ptr++;
     }
-    for (i = 0; i < nr_of_dpus; i++) {
-        summarize_performance_of(dpu_get_id(rank, i), file_size, results[i].cycles);
-        printf("checksum computed by the DPU = 0x%08x\n", results[i].checksum);
+    result_ptr = results;
+    DPU_FOREACH(rank, dpu) {
+        summarize_performance_of(dpu, file_size, result_ptr->cycles);
+        printf("checksum computed by the DPU = 0x%08x\n", result_ptr->checksum);
         printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
 
-        status = (results[i].checksum == theoretical_checksum);
+        status = (result_ptr->checksum == theoretical_checksum);
 
         if (status) {
             printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
         } else {
             printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
         }
+	result_ptr++;
     }
     free(results);
     if (dpu_free(rank) != DPU_API_SUCCESS) {
@@ -238,13 +244,13 @@ int main(int argc, char **argv) {
     return -1;
 }
 
-static int init_dpus(dpu_rank_t *rank, dpu_type_t dpu_type) {
-    dpu_logging_config_t log_config = {
+static int init_dpus(struct dpu_rank_t **rank, dpu_type_t dpu_type) {
+    struct dpu_logging_config_t log_config = {
             .source = KTRACE,
             .destination_directory_name = DPU_LOG_DIRECTORY
     };
 
-    struct dpu_param params = {
+    struct dpu_param_t params = {
             .type = dpu_type,
             .profile = DPU_PROFILE_STR,
             .logging_config = &log_config
@@ -261,7 +267,7 @@ static int init_dpus(dpu_rank_t *rank, dpu_type_t dpu_type) {
     return 0;
 }
 
-static int run_dpus(dpu_rank_t rank, uint32_t nr_of_dpus) {
+static int run_dpus(struct dpu_rank_t *rank, uint32_t nr_of_dpus) {
     uint32_t nb_of_running_dpus = 0;
     int res = 0;
 
