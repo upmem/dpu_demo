@@ -17,7 +17,7 @@ OBJEXT      := o
 #Flags, Libraries and Includes
 PROFILE     := $(if $(DPU_TARGET_PROFILE),-DDPU_PROFILE=$(DPU_TARGET_PROFILE))
 CFLAGS      := -std=c11 -Wall -O3 -g -DDPU_TYPE=$(DPU_TARGET_TYPE) $(PROFILE)
-LIB         := -ldpu -ldpucni -lpthread -L$(UPMEM_HOME)/usr/lib
+LIB         := -ldpu -L$(UPMEM_HOME)/usr/lib
 INC         := -I$(INCDIR) -I/usr/local/include -I$(UPMEM_HOME)/usr/share/upmem/include/host
 INCDEP      := -I$(INCDIR)
 
