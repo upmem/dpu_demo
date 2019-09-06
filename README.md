@@ -1,18 +1,18 @@
 ![UPMEM Logo](http://www.upmem.com/wp-content/uploads/2015/06/logo_upmem2.png)
 
-UPMEM Processing-In-Memory solution consist of a pool of programmable co-processors, the DPUs, integrated in the memory.
+The UPMEM Processing-In-Memory solution consists of a pool of programmable co-processors, the DPUs, integrated in the memory.
 
 # Content
 Examples of DPU programs generated with UPMEM DPU SDK
 
 # Requirements
 
- * The UPMEM DPU SDK, version 2017.1.2-EAP or later
+ * The UPMEM DPU SDK, version 2019.3.0 or later
  * Gnu make and gcc, to build the application
 
 #Building the programs
 
-*make [TARGET_TYPE=...]* to buid the programs for a given target.
+*make [TARGET_TYPE=...]* to build the programs for a given target.
 
  * If not set, *TARGET_TYPE* is by default the functional simulator
  * Otherwise, you may select a specific type, such as *FPGA*
@@ -39,4 +39,4 @@ As sanity check it compares host result with the DPU results, and prints out the
 * 2) The number of DPU cycles per byte processed
  
 # SDK Documentation
-https://dev-zone.upmem.com/doc/
+https://sdk.upmem.com
