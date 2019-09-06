@@ -1,6 +1,6 @@
 ![UPMEM Logo](http://www.upmem.com/wp-content/uploads/2015/06/logo_upmem2.png)
 
-UPMEM Processing-In-Memory solution consists of a pool of programmable co-processors, the DPUs, integrated in the memory.
+The UPMEM Processing-In-Memory solution consists of a pool of programmable co-processors, the DPUs, integrated in the memory.
 
 # Content
 Examples of DPU programs generated with UPMEM DPU SDK
