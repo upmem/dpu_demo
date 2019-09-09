@@ -15,7 +15,7 @@ Examples of DPU programs generated with UPMEM DPU SDK
 *make [TARGET_TYPE=...]* to build the programs for a given target.
 
  * If not set, *TARGET_TYPE* is by default the functional simulator
- * Otherwise, you may select a specific type, such as *FPGA*
+ * Otherwise, you may select a specific type, such as *HW*
 
 *make clean* removes the resulting builds.
 
