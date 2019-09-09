@@ -7,5 +7,5 @@ clean:
 	cd checksum ; make cleaner
 
 test:
-	cd checksum ; make test
+	cd checksum ; make DPU_TARGET_TYPE=$(TARGET_TYPE) test
 
