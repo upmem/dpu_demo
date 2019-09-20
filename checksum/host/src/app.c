@@ -43,17 +43,6 @@
 
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, "ERROR: "fmt"\n", ##__VA_ARGS__)
 
-#ifndef DPU_TYPE
-#define DPU_TYPE FUNCTIONAL_SIMULATOR
-#endif /* !DPU_TYPE */
-#ifdef DPU_PROFILE
-#define STR(a) #a
-#define STRINGIFY(a) STR(a)
-#define DPU_PROFILE_STR STRINGIFY(DPU_PROFILE)
-#else
-#define DPU_PROFILE_STR ""
-#endif /* !DPU_PROFILE */
-
 #ifndef DPU_BINARY
 
 #error The path to the DPU Binary must be defined as DPU_BINARY
@@ -74,10 +63,9 @@
 * @brief Allocate and initialize the DPUs.
 *
 * @param rank the unique identifier of the allocated rank
-* @param dpu_type the target type of the DPUs
 * @return 0 in case of success, -1 otherwise.
 */
-static int init_dpus(struct dpu_rank_t **rank, dpu_type_t dpu_type);
+static int init_dpus(struct dpu_rank_t **rank);
 
 /**
 * @brief Run the DPUs in parallel, until the end of their execution.
@@ -140,21 +128,7 @@ int main(int argc, char **argv) {
     const unsigned int file_size = 8 << 20;
     bool status = false;
 
-    dpu_type_t dpu_type = DPU_TYPE;
-
-    if (argc >= 2) {
-        char *dpu_type_string = argv[1];
-
-        if (strcmp(dpu_type_string, "fsim") == 0) {
-            dpu_type = FUNCTIONAL_SIMULATOR;
-        } else if (strcmp(dpu_type_string, "asic") == 0) {
-            dpu_type = HW;
-        } else if (strcmp(dpu_type_string, "fpga") == 0) {
-            dpu_type = HW;
-        }
-    }
-
-    if (init_dpus(&rank, dpu_type) != 0) {
+    if (init_dpus(&rank) != 0) {
         PRINT_ERROR("cannot initialize DPUs");
         return -1;
     }
@@ -244,17 +218,15 @@ int main(int argc, char **argv) {
     return -1;
 }
 
-static int init_dpus(struct dpu_rank_t **rank, dpu_type_t dpu_type) {
+static int init_dpus(struct dpu_rank_t **rank) {
     struct dpu_logging_config_t log_config = {
-            .source = KTRACE,
+            .source = PRINTF,
             .destination_directory_name = DPU_LOG_DIRECTORY
     };
 
-    struct dpu_param_t params = {
-            .type = dpu_type,
-            .profile = DPU_PROFILE_STR,
-            .logging_config = &log_config
-    };
+    struct dpu_param_t params;
+    dpu_fill_default_params(&params);
+    params.logging_config = &log_config;
 
     if (dpu_alloc(&params, rank) != DPU_API_SUCCESS)
         return -1;

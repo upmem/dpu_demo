@@ -37,7 +37,7 @@
 #include <mram.h>
 #include <alloc.h>
 #include <mram.h>
-#include <ktrace.h>
+#include <stdio.h>
 #include <perfcounter.h>
 
 /*
@@ -55,8 +55,6 @@
  * accessible to any thread.
  */
 SYSTEM_MAILBOX_INITIALIZER(1);
-
-#define printf ktrace
 
 // Use blocks of 256 bytes
 #define BLOCK_SIZE_LOG2 8

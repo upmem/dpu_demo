@@ -15,8 +15,7 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-PROFILE     := $(if $(DPU_TARGET_PROFILE),-DDPU_PROFILE=$(DPU_TARGET_PROFILE))
-CFLAGS      := -std=c11 -Wall -O3 -g -DDPU_TYPE=$(DPU_TARGET_TYPE) $(PROFILE)
+CFLAGS      := -std=c11 -Wall -O3 -g
 LIB         := `dpu-pkg-config --libs dpu`
 INC         := -I$(INCDIR) `dpu-pkg-config --cflags dpu`
 INCDEP      := -I$(INCDIR)
