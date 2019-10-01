@@ -34,11 +34,6 @@
 // changing any file location, just uncomment the following define:
 #define DPU_BINARY "bin/dpu/dpu_app.bin"
 
-// Define the DPU Log File Directory as DPU_LOG_DIRECTORY here.
-// If you want to launch the application from the root of the project, without
-// changing any file location, just uncomment the following define:
-#define DPU_LOG_DIRECTORY "log/host/"
-
 #define NB_OF_TASKLETS_PER_DPU 16
 
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, "ERROR: "fmt"\n", ##__VA_ARGS__)
@@ -46,12 +41,6 @@
 #ifndef DPU_BINARY
 
 #error The path to the DPU Binary must be defined as DPU_BINARY
-
-#else
-
-#ifndef DPU_LOG_DIRECTORY
-
-#error The path to the DPU Log Directory must be defined as DPU_LOG_DIRECTORY
 
 #else
 
@@ -219,16 +208,7 @@ int main(int argc, char **argv) {
 }
 
 static int init_dpus(struct dpu_rank_t **rank) {
-    struct dpu_logging_config_t log_config = {
-            .source = PRINTF,
-            .destination_directory_name = DPU_LOG_DIRECTORY
-    };
-
-    struct dpu_param_t params;
-    dpu_fill_default_params(&params);
-    params.logging_config = &log_config;
-
-    if (dpu_alloc(&params, rank) != DPU_API_SUCCESS)
+    if (dpu_alloc(NULL, rank) != DPU_API_SUCCESS)
         return -1;
 
     if (dpu_load_all(*rank, DPU_BINARY) != DPU_API_SUCCESS) {
@@ -258,4 +238,3 @@ static int run_dpus(struct dpu_rank_t *rank, uint32_t nr_of_dpus) {
 }
 
 #endif /* DPU_BINARY */
-#endif /* DPU_LOG_DIRECTORY */

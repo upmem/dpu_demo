@@ -9,7 +9,6 @@ SRCDIR      := src
 INCDIR      := inc
 BUILDDIR    := ../obj/host
 TARGETDIR   := ../bin/host
-LOGDIR      := ../log/host
 SRCEXT      := c
 DEPEXT      := d
 OBJEXT      := o
@@ -36,7 +35,6 @@ remake: cleaner all
 directories:
 	@mkdir -p $(TARGETDIR)
 	@mkdir -p $(BUILDDIR)
-	@mkdir -p $(LOGDIR)
 
 #Clean only Objects
 clean:
@@ -45,7 +43,6 @@ clean:
 #Full Clean, Objects and Binaries
 cleaner: clean
 	@$(RM) -rf $(TARGETDIR)
-	@$(RM) -rf $(LOGDIR)
 
 #Pull in dependency info for *existing* .o files
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))

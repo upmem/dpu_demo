@@ -2,7 +2,6 @@ DPU_DIR := dpu
 HOST_DIR := host
 BUILDDIR := obj
 TARGETDIR := bin
-LOGDIR := log
 
 .PHONY: all remake dpu host clean clean_dpu clean_host
 .DEFAULT_GOAL := all
@@ -21,7 +20,6 @@ clean:
 
 cleaner: clean
 	@$(RM) -rf $(TARGETDIR)
-	@$(RM) -rf $(LOGDIR)
 
 clean_dpu:
 	$(MAKE) -C $(DPU_DIR) cleaner
