@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
     printf("Display DPU Logs\n");
     DPU_FOREACH(rank, dpu) {
         printf("DPU#%d:\n", dpu_get_member_id(dpu));
-        if (!dpulog_read_for_dpu(dpu, stdout)) {
+        if (dpulog_read_for_dpu(dpu, stdout) != DPU_API_SUCCESS) {
             PRINT_ERROR("cannot display DPU log correctly");
             goto err;
         }
