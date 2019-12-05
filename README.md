@@ -7,7 +7,7 @@ Examples of DPU programs generated with UPMEM DPU SDK
 
 # Requirements
 
- * The UPMEM DPU SDK, version 2019.3.0 or later
+ * The UPMEM DPU SDK, version 2019.4.0
  * Gnu make and gcc, to build the application
 
 #Building the programs
@@ -19,12 +19,7 @@ Examples of DPU programs generated with UPMEM DPU SDK
 # Executing
 
 The simplest way to execute the programs is to run *make test*.
-Otherwise, you may run individual tests manually:
-
-  * *cd TEST_DIR*
-  * *bin/host/program*
-
-Where *TEST_DIR* is the test name (e.g. *checksum*).
+Otherwise, you may run individual tests manually by executing the binary generated in the *build* folder of the targeted program.
 
 # List of demo programs
 
@@ -34,6 +29,6 @@ The host application generates a random file of 8MB, and schedules multiple DPUs
 As sanity check it compares host result with the DPU results, and prints out the DPU performances:
 * 1) Total number of DPU cycles executed
 * 2) The number of DPU cycles per byte processed
- 
+
 # SDK Documentation
 https://sdk.upmem.com
