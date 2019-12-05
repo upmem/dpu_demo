@@ -20,7 +20,6 @@
  */
 
 #include <dpu.h>
-#include <dpu_log.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
