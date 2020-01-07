@@ -84,12 +84,6 @@ int main()
     printf("Run program on DPU(s)\n");
     DPU_ASSERT(dpu_boot_all(rank, SYNCHRONOUS));
 
-    printf("Display DPU Logs\n");
-    DPU_FOREACH (rank, dpu) {
-        printf("DPU#%d:\n", dpu_get_id(dpu));
-        DPU_ASSERT(dpulog_read_for_dpu(dpu, stdout));
-    }
-
     printf("Retrieve results\n");
     DPU_FOREACH (rank, dpu) {
         bool dpu_status;

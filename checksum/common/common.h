@@ -10,7 +10,7 @@
 #define DPU_RESULTS dpu_wram_results
 
 /* Size of the buffer on which the checksum will be performed */
-#define BUFFER_SIZE (8 << 20)
+#define BUFFER_SIZE (64 << 20)
 
 /* Number of running tasklets on the DPU */
 #define NB_TASKLETS_PER_DPU 16

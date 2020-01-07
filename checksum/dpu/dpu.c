@@ -32,7 +32,6 @@
 #include <mram.h>
 #include <perfcounter.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "common.h"
 
@@ -44,7 +43,7 @@
 #include <rt.h>
 
 /* Use blocks of 256 bytes */
-#define BLOCK_SIZE (256)
+#define BLOCK_SIZE (2048)
 
 __dma_aligned uint8_t DPU_CACHES[NB_TASKLETS_PER_DPU][BLOCK_SIZE];
 __dma_aligned dpu_results_t DPU_RESULTS[NB_TASKLETS_PER_DPU];
@@ -62,16 +61,18 @@ int main()
     uint8_t *cache = DPU_CACHES[tasklet_id];
     dpu_results_t *result = &DPU_RESULTS[tasklet_id];
     uint32_t checksum = 0;
+    const uint32_t nb_blocks = (BUFFER_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    const uint32_t nb_blocks_per_dpu = nb_blocks / NB_TASKLETS_PER_DPU;
 
     /* Initialize once the cycle counter */
     if (tasklet_id == 0)
         perfcounter_config(COUNT_CYCLES, true);
 
-    for (uint32_t buffer_idx = tasklet_id * BLOCK_SIZE; buffer_idx < BUFFER_SIZE;
-         buffer_idx += (NB_TASKLETS_PER_DPU * BLOCK_SIZE)) {
+    for (int32_t block_id = (tasklet_id + 1) * nb_blocks_per_dpu - 1; block_id >= (int32_t)(tasklet_id * nb_blocks_per_dpu);
+         block_id--) {
 
         /* Load cache with current MRAM block. */
-        MRAM_READ((mram_addr_t)&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
+        MRAM_READ((mram_addr_t)&DPU_BUFFER[block_id * BLOCK_SIZE], cache, BLOCK_SIZE);
 
         /* computes the checksum of a cached block */
         for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx++) {
@@ -83,6 +84,5 @@ int main()
     result->cycles = (uint32_t)perfcounter_get();
     result->checksum = checksum;
 
-    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum);
     return 0;
 }
