@@ -36,18 +36,11 @@
 
 #include "common.h"
 
-/*
- * Create a system with 'NB_TASKLETS_PER_DPU' tasklets to compute individual
- * checksums with a 256-byte stack.
- */
-#define TASKLETS_INITIALIZER TASKLETS(NB_TASKLETS_PER_DPU, main, 256, 0)
-#include <rt.h>
-
 /* Use blocks of 256 bytes */
 #define BLOCK_SIZE (256)
 
-__dma_aligned uint8_t DPU_CACHES[NB_TASKLETS_PER_DPU][BLOCK_SIZE];
-__dma_aligned dpu_results_t DPU_RESULTS[NB_TASKLETS_PER_DPU];
+__dma_aligned uint8_t DPU_CACHES[NR_TASKLETS][BLOCK_SIZE];
+__dma_aligned dpu_results_t DPU_RESULTS[NR_TASKLETS];
 
 __mram_noinit uint8_t DPU_BUFFER[BUFFER_SIZE];
 
@@ -68,7 +61,7 @@ int main()
         perfcounter_config(COUNT_CYCLES, true);
 
     for (uint32_t buffer_idx = tasklet_id * BLOCK_SIZE; buffer_idx < BUFFER_SIZE;
-         buffer_idx += (NB_TASKLETS_PER_DPU * BLOCK_SIZE)) {
+         buffer_idx += (NR_TASKLETS * BLOCK_SIZE)) {
 
         /* Load cache with current MRAM block. */
         MRAM_READ((mram_addr_t)&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);

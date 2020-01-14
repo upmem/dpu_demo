@@ -12,9 +12,6 @@
 /* Size of the buffer on which the checksum will be performed */
 #define BUFFER_SIZE (8 << 20)
 
-/* Number of running tasklets on the DPU */
-#define NB_TASKLETS_PER_DPU 16
-
 /* Structure used by both the host and the dpu to communicate information */
 typedef struct {
     uint32_t checksum;

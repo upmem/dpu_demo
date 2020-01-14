@@ -20,6 +20,7 @@
  */
 
 #include <dpu.h>
+#include <dpu_log.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,17 +60,16 @@ static uint32_t create_test_file()
  */
 int main()
 {
-    struct dpu_rank_t *rank;
-    struct dpu_t *dpu;
+    struct dpu_set_t dpu_set, dpu;
     uint32_t nr_of_dpus;
     uint32_t theoretical_checksum, dpu_checksum;
     uint32_t dpu_cycles;
     bool status = true;
 
-    DPU_ASSERT(dpu_alloc(NULL, &rank));
-    DPU_ASSERT(dpu_load_all(rank, DPU_BINARY));
+    DPU_ASSERT(dpu_alloc(NR_DPUS, NULL, &dpu_set));
+    DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
 
-    DPU_ASSERT(dpu_get_nr_of_dpus_in(rank, &nr_of_dpus));
+    DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("Allocated %d DPU(s)\n", nr_of_dpus);
 
     // Create an "input file" with arbitrary data.
@@ -77,27 +77,29 @@ int main()
     theoretical_checksum = create_test_file();
 
     printf("Load input data\n");
-    DPU_FOREACH (rank, dpu) {
-        DPU_ASSERT(dpu_copy_to(dpu, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
-    }
+    DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
     printf("Run program on DPU(s)\n");
-    DPU_ASSERT(dpu_boot_all(rank, SYNCHRONOUS));
+    DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-    printf("Display DPU Logs\n");
-    DPU_FOREACH (rank, dpu) {
-        printf("DPU#%d:\n", dpu_get_id(dpu));
-        DPU_ASSERT(dpulog_read_for_dpu(dpu, stdout));
+    {
+        unsigned int each_dpu = 0;
+        printf("Display DPU Logs\n");
+        DPU_FOREACH (dpu_set, dpu) {
+            printf("DPU#%d:\n", each_dpu);
+            DPU_ASSERT(dpulog_read_for_dpu(dpu.dpu, stdout));
+            each_dpu++;
+        }
     }
 
     printf("Retrieve results\n");
-    DPU_FOREACH (rank, dpu) {
+    DPU_FOREACH (dpu_set, dpu) {
         bool dpu_status;
         dpu_checksum = 0;
         dpu_cycles = 0;
 
         // Retrieve tasklet results and compute the final checksum.
-        for (unsigned int each_tasklet = 0; each_tasklet < NB_TASKLETS_PER_DPU; each_tasklet++) {
+        for (unsigned int each_tasklet = 0; each_tasklet < NR_TASKLETS; each_tasklet++) {
             dpu_results_t result;
             DPU_ASSERT(
                 dpu_copy_from(dpu, XSTR(DPU_RESULTS), each_tasklet * sizeof(dpu_results_t), &result, sizeof(dpu_results_t)));
@@ -121,6 +123,6 @@ int main()
         }
     }
 
-    DPU_ASSERT(dpu_free(rank));
+    DPU_ASSERT(dpu_free(dpu_set));
     return status ? 0 : -1;
 }
