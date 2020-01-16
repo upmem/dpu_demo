@@ -40,7 +40,7 @@
 #define BLOCK_SIZE (256)
 
 __dma_aligned uint8_t DPU_CACHES[NR_TASKLETS][BLOCK_SIZE];
-__dma_aligned dpu_results_t DPU_RESULTS[NR_TASKLETS];
+__host dpu_results_t DPU_RESULTS[NR_TASKLETS];
 
 __mram_noinit uint8_t DPU_BUFFER[BUFFER_SIZE];
 
