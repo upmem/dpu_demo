@@ -63,8 +63,8 @@ int main()
     for (uint32_t buffer_idx = tasklet_id * BLOCK_SIZE; buffer_idx < BUFFER_SIZE;
          buffer_idx += (NR_TASKLETS * BLOCK_SIZE)) {
 
-        /* Load cache with current MRAM block. */
-        MRAM_READ((mram_addr_t)&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
+        /* load cache with current mram block. */
+        mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
 
         /* computes the checksum of a cached block */
         for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx++) {
