@@ -4,6 +4,11 @@ BUILDDIR ?= build
 NR_TASKLETS ?= 16
 NR_DPUS ?= 1
 
+define conf_filename
+	${BUILDDIR}/.NR_DPUS_$(1)_NR_TASKLETS_$(2).conf
+endef
+CONF := $(call conf_filename,${NR_DPUS},${NR_TASKLETS})
+
 HOST_TARGET := ${BUILDDIR}/checksum_host
 DPU_TARGET := ${BUILDDIR}/checksum_dpu
 
@@ -21,14 +26,18 @@ DPU_FLAGS := ${COMMON_FLAGS} -O2 -DNR_TASKLETS=${NR_TASKLETS}
 
 all: ${HOST_TARGET} ${DPU_TARGET}
 
-${HOST_TARGET}: ${HOST_SOURCES} ${COMMON_INCLUDES}
+${CONF}:
+	$(RM) $(call conf_filename,*,*)
+	touch ${CONF}
+
+${HOST_TARGET}: ${HOST_SOURCES} ${COMMON_INCLUDES} ${CONF}
 	$(CC) -o $@ ${HOST_SOURCES} ${HOST_FLAGS}
 
-${DPU_TARGET}: ${DPU_SOURCES} ${COMMON_INCLUDES}
+${DPU_TARGET}: ${DPU_SOURCES} ${COMMON_INCLUDES} ${CONF}
 	dpu-upmem-dpurte-clang ${DPU_FLAGS} -o $@ ${DPU_SOURCES}
 
 clean:
-	$(RM) -rf $(BUILDDIR)
+	$(RM) -r $(BUILDDIR)
 
 test: all
 	./${HOST_TARGET}
