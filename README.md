@@ -1,4 +1,4 @@
-![UPMEM Logo](http://www.upmem.com/wp-content/uploads/2015/06/logo_upmem2.png)
+![UPMEM Logo](https://www.upmem.com/wp-content/uploads/2018/05/Logo-original-wesbite.png)
 
 The UPMEM Processing-In-Memory solution consists of a pool of programmable co-processors, the DPUs, integrated in the memory.
 
@@ -7,7 +7,7 @@ Examples of DPU programs generated with UPMEM DPU SDK
 
 # Requirements
 
- * The UPMEM DPU SDK, version 2019.4.0
+ * The [UPMEM DPU SDK](https://sdk.upmem.com/)
  * Gnu make and gcc, to build the application
 
 #Building the programs
@@ -37,4 +37,4 @@ Macros can be used to change the of the program:
 example: *NR_TASKLETS=1 NR_DPUS=DPU_ALLOCATE_ALL make test*
 
 # SDK Documentation
-https://sdk.upmem.com
+https://sdk.upmem.com/stable/
