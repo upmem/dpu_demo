@@ -30,11 +30,11 @@ As sanity check it compares host result with the DPU results, and prints out the
 * Total number of DPU cycles executed
 * The number of DPU cycles per byte processed
 
-Macros can be used to change the of the program:
+Macros can be used to change the dimensions of the program:
 * NR_TASKLETS set the number of tasklets used by the dpu program (default: 16)
-* NR_DPUS set the number of dpu used by the host program (default: 1)
+* NR_DPUS set the number of dpus used by the host program (default: 1)
 
-example: `NR_TASKLETS=1 NR_DPUS=DPU_ALLOCATE_ALL make test`
+example: `make test NR_TASKLETS=1 NR_DPUS=DPU_ALLOCATE_ALL`
 
 # SDK Documentation
 https://sdk.upmem.com/stable/
