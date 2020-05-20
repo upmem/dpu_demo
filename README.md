@@ -36,5 +36,13 @@ Macros can be used to change the dimensions of the program:
 
 example: `make test NR_TASKLETS=1 NR_DPUS=DPU_ALLOCATE_ALL`
 
+Two implementations of the Host application are provided:
+* `host.c` using the C Host API
+* `host.py` using the Python Host API
+
+`make test` will run the two implementations. Use the Makefile targets `test_c` or `test_python` to specify an implementation.
+
+Note: because the input file is randomly generated, the checksum may differ between the two implementations.
+
 # SDK Documentation
 https://sdk.upmem.com/stable/
