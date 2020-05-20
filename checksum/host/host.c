@@ -83,12 +83,11 @@ int main()
     DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
     {
-        unsigned int each_dpu = 0;
+        unsigned int each_dpu;
         printf("Display DPU Logs\n");
-        DPU_FOREACH (dpu_set, dpu) {
+        DPU_FOREACH (dpu_set, dpu, each_dpu) {
             printf("DPU#%d:\n", each_dpu);
-            DPU_ASSERT(dpulog_read_for_dpu(dpu.dpu, stdout));
-            each_dpu++;
+            DPU_ASSERT(dpu_log_read(dpu, stdout));
         }
     }
 
