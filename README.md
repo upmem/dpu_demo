@@ -40,7 +40,7 @@ Two implementations of the Host application are provided:
 * `host.c` using the C Host API
 * `host.py` using the Python Host API
 
-`make test` will run the two implementations. Use the Makefile targets `test_c` or `test_python` to specify an implementation.
+`make test` will run both implementations. Use the Makefile targets `test_c` or `test_python` to specify an implementation.
 
 Note: because the input file is randomly generated, the checksum may differ between the two implementations.
 
