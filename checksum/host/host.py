@@ -19,6 +19,7 @@ import argparse
 from dpu import driver
 import os
 import random
+import struct
 import sys
 
 DPU_BINARY = 'build/checksum_dpu'
@@ -66,7 +67,7 @@ def main(nr_dpus, nr_tasklets):
 
                 dpu.copy(result, DPU_RESULTS, RESULT_SIZE, task_id * RESULT_SIZE)
 
-                result_checksum, result_cycles = extract_result_info(result)
+                result_checksum, result_cycles = struct.unpack("<II", result)
                 dpu_checksum += result_checksum
                 dpu_cycles = max(dpu_cycles, result_cycles)
 
@@ -92,18 +93,6 @@ def create_test_file():
     checksum = sum(test_file)
 
     return checksum, test_file
-
-
-def extract_result_info(result):
-    checksum = 0
-    cycles = 0
-
-    for i in range(4):
-        checksum |= result[i] << (i * 8)
-    for i in range(4):
-        cycles |= result[4 + i] << (i * 8)
-
-    return checksum, cycles
 
 
 if __name__ == '__main__':
