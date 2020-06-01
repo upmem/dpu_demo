@@ -13,9 +13,16 @@
 #define BUFFER_SIZE (8 << 20)
 
 /* Structure used by both the host and the dpu to communicate information */
+
+#include <stdint.h>
+
 typedef struct {
     uint32_t checksum;
     uint32_t cycles;
+} dpu_result_t;
+
+typedef struct {
+    dpu_result_t tasklet_result[NR_TASKLETS];
 } dpu_results_t;
 
 #endif /* __COMMON_H__ */

@@ -20,7 +20,6 @@
  */
 
 #include <dpu.h>
-#include <dpu_log.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,30 +81,30 @@ int main()
     printf("Run program on DPU(s)\n");
     DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-    {
-        unsigned int each_dpu;
-        printf("Display DPU Logs\n");
-        DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            printf("DPU#%d:\n", each_dpu);
-            DPU_ASSERT(dpu_log_read(dpu, stdout));
-        }
+    DPU_FOREACH (dpu_set, dpu) {
+        DPU_ASSERT(dpu_log_read(dpu, stdout));
     }
 
     printf("Retrieve results\n");
-    DPU_FOREACH (dpu_set, dpu) {
+    dpu_results_t results[nr_of_dpus];
+    uint32_t each_dpu;
+    DPU_FOREACH (dpu_set, dpu, each_dpu) {
+        DPU_ASSERT(dpu_prepare_xfer(dpu, &results[each_dpu]));
+    }
+    DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_RESULTS), 0, sizeof(dpu_results_t), DPU_XFER_DEFAULT));
+
+    DPU_FOREACH (dpu_set, dpu, each_dpu) {
         bool dpu_status;
         dpu_checksum = 0;
         dpu_cycles = 0;
 
         // Retrieve tasklet results and compute the final checksum.
         for (unsigned int each_tasklet = 0; each_tasklet < NR_TASKLETS; each_tasklet++) {
-            dpu_results_t result;
-            DPU_ASSERT(
-                dpu_copy_from(dpu, XSTR(DPU_RESULTS), each_tasklet * sizeof(dpu_results_t), &result, sizeof(dpu_results_t)));
+            dpu_result_t *result = &results[each_dpu].tasklet_result[each_tasklet];
 
-            dpu_checksum += result.checksum;
-            if (result.cycles > dpu_cycles)
-                dpu_cycles = result.cycles;
+            dpu_checksum += result->checksum;
+            if (result->cycles > dpu_cycles)
+                dpu_cycles = result->cycles;
         }
 
         dpu_status = (dpu_checksum == theoretical_checksum);

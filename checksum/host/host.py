@@ -15,8 +15,8 @@
 # limitations under the License.
 
 
+from dpu import DpuSet
 import argparse
-from dpu import driver
 import os
 import random
 import struct
@@ -37,9 +37,8 @@ ANSI_COLOR_RESET = '\x1b[0m'
 def main(nr_dpus, nr_tasklets):
     ok = True
 
-    with driver.allocate(nr_dpus) as dpus:
+    with DpuSet(nr_dpus, binary = DPU_BINARY, log = sys.stdout) as dpus:
         print('Allocated {} DPU(s)'.format(len(dpus)))
-        dpus.load(DPU_BINARY)
 
         # Create an "input file" with arbitrary data.
         # Compute its theoretical checksum value.
@@ -51,23 +50,17 @@ def main(nr_dpus, nr_tasklets):
         print('Run program on DPU(s)')
         dpus.exec()
 
-        print('Display DPU Logs')
-        for idx, dpu in enumerate(dpus):
-            print('DPU#{}:'.format(idx))
-            dpu.log()
+        results = [bytearray(RESULT_SIZE * nr_tasklets) for _ in dpus]
+        dpus.copy(results, DPU_RESULTS)
 
         print('Retrieve results')
-        for dpu in dpus:
+        for dpu, result in zip(dpus, results):
             dpu_checksum = 0
             dpu_cycles = 0
 
             # Retrieve tasklet results and compute the final checksum.
             for task_id in range(nr_tasklets):
-                result = bytearray(RESULT_SIZE)
-
-                dpu.copy(result, DPU_RESULTS, RESULT_SIZE, task_id * RESULT_SIZE)
-
-                result_checksum, result_cycles = struct.unpack("<II", result)
+                result_checksum, result_cycles = struct.unpack_from("<II", result, task_id * RESULT_SIZE)
                 dpu_checksum += result_checksum
                 dpu_cycles = max(dpu_cycles, result_cycles)
 
