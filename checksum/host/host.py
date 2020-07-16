@@ -16,6 +16,7 @@
 
 
 from dpu import DpuSet
+from dpu import ALLOCATE_ALL
 import argparse
 import os
 import random
@@ -90,8 +91,17 @@ def create_test_file():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('nr_dpus', type=int)
+    parser.add_argument('nr_dpus')
     parser.add_argument('nr_tasklets', type=int)
     args = parser.parse_args()
 
-    main(args.nr_dpus, args.nr_tasklets)
+    if args.nr_dpus == 'DPU_ALLOCATE_ALL':
+        nr_dpus = ALLOCATE_ALL
+    else:
+        try:
+            nr_dpus = int(args.nr_dpus)
+        except ValueError:
+            parser.error("argument nr_dpus: invalid value: '{}'".format(args.nr_dpus))
+            sys.exit(os.EX_USAGE)
+
+    main(nr_dpus, args.nr_tasklets)
