@@ -10,6 +10,7 @@ endef
 CONF := $(call conf_filename,${NR_DPUS},${NR_TASKLETS})
 
 HOST_PYTHON_SCRIPT := ${HOST_DIR}/host.py
+HOST_PYTHON_SCRIPT_POWERVIRUS := ${HOST_DIR}/host_powervirus.py
 HOST_TARGET := ${BUILDDIR}/checksum_host
 DPU_TARGET := ${BUILDDIR}/checksum_dpu
 
@@ -45,6 +46,9 @@ test_c: ${HOST_TARGET} ${DPU_TARGET}
 
 test_python: ${DPU_TARGET}
 	python3 ${HOST_PYTHON_SCRIPT} ${NR_DPUS} ${NR_TASKLETS}
+
+test_python_powervirus: ${DPU_TARGET}
+	python3 ${HOST_PYTHON_SCRIPT_POWERVIRUS} ${NR_DPUS} ${NR_TASKLETS}
 
 test: test_c test_python
 
