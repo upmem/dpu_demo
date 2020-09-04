@@ -75,6 +75,6 @@ int main()
     result->cycles = (uint32_t)perfcounter_get();
     result->checksum = checksum;
 
-    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum);
+    //printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum);
     return 0;
 }

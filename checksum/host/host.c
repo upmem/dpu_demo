@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "common.h"
 
@@ -41,10 +42,17 @@ static uint8_t test_file[BUFFER_SIZE];
  *
  * @return the theorical checksum value
  */
-static uint32_t create_test_file()
+static uint64_t create_test_file()
 {
-    uint32_t checksum = 0;
-    srand(0);
+    uint64_t checksum = 0;
+    struct timeval time; 
+
+    gettimeofday(&time,NULL);
+
+     // microsecond has 1 000 000
+     // Assuming you did not need quite that accuracy
+     // Also do not assume the system clock has that accuracy.
+     srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
 
     for (unsigned int i = 0; i < BUFFER_SIZE; i++) {
         test_file[i] = (unsigned char)(rand());
@@ -61,7 +69,7 @@ int main()
 {
     struct dpu_set_t dpu_set, dpu;
     uint32_t nr_of_dpus;
-    uint32_t theoretical_checksum, dpu_checksum;
+    uint64_t theoretical_checksum, dpu_checksum;
     uint32_t dpu_cycles;
     bool status = true;
 
@@ -73,19 +81,20 @@ int main()
 
     // Create an "input file" with arbitrary data.
     // Compute its theoretical checksum value.
+    for (int i = 0; i < 50000; ++i) {
     theoretical_checksum = create_test_file();
 
-    printf("Load input data\n");
+    //printf("Load input data\n");
     DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
-    printf("Run program on DPU(s)\n");
+    //printf("Run program on DPU(s)\n");
     DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-    DPU_FOREACH (dpu_set, dpu) {
-        DPU_ASSERT(dpu_log_read(dpu, stdout));
-    }
+    //DPU_FOREACH (dpu_set, dpu) {
+    //    DPU_ASSERT(dpu_log_read(dpu, stdout));
+    //}
 
-    printf("Retrieve results\n");
+    //printf("Retrieve results\n");
     dpu_results_t results[nr_of_dpus];
     uint32_t each_dpu;
     DPU_FOREACH (dpu_set, dpu, each_dpu) {
@@ -110,15 +119,18 @@ int main()
         dpu_status = (dpu_checksum == theoretical_checksum);
         status = status && dpu_status;
 
-        printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
-        printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
-        printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
-        printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
+        //printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
+        //printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
+        //printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
+        //printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
         if (dpu_status) {
-            printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
+	    if (each_dpu == 0)
+		    printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal = 0x%16lx\n", dpu_checksum);
         } else {
             printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
+	    while (1);
         }
+    }
     }
 
     DPU_ASSERT(dpu_free(dpu_set));
