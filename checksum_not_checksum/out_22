@@ -1,0 +1,62 @@
+dpu-upmem-dpurte-clang -Wall -Wextra -Werror -g -Icommon -O2 -DNR_TASKLETS=24 -o build/checksum_dpu dpu/dpu.c
+python3 host/host_powervirus.py DPU_ALLOCATE_ALL 24
+Allocated 1541 DPU(s)
+Load powervirus on all DPUs
+Load checskum on dpu
+Load input data
+Run program on DPU(s)
+Retrieve results
+Check dpu result
+DPU execution time  = 2.33637e+09 cycles
+performance         = 35.3673 cycles/byte
+checksum computed by the DPU = 0x1f6002595
+actual checksum value        = 0x1f6002595
+[[32mOK[0m] checksums are equal
+Load powervirus on all DPUs
+Load checskum on dpu
+Load input data
+Run program on DPU(s)
+Retrieve results
+Check dpu result
+DPU execution time  = 2.33638e+09 cycles
+performance         = 35.3674 cycles/byte
+checksum computed by the DPU = 0x1f6002595
+actual checksum value        = 0x1f6002595
+[[32mOK[0m] checksums are equal
+Load powervirus on all DPUs
+Load checskum on dpu
+Load input data
+Run program on DPU(s)
+Retrieve results
+Check dpu result
+DPU execution time  = 2.33638e+09 cycles
+performance         = 35.3674 cycles/byte
+checksum computed by the DPU = 0x1f6002595
+actual checksum value        = 0x1f6002595
+[[32mOK[0m] checksums are equal
+Load powervirus on all DPUs
+Load checskum on dpu
+Load input data
+Run program on DPU(s)
+Retrieve results
+Check dpu result
+DPU execution time  = 2.33638e+09 cycles
+performance         = 35.3674 cycles/byte
+checksum computed by the DPU = 0x1f6002595
+actual checksum value        = 0x1f6002595
+[[32mOK[0m] checksums are equal
+Load powervirus on all DPUs
+Load checskum on dpu
+Load input data
+Run program on DPU(s)
+Retrieve results
+Check dpu result
+DPU execution time  = 2.33644e+09 cycles
+performance         = 35.3683 cycles/byte
+checksum computed by the DPU = 0x1f6002595
+actual checksum value        = 0x1f6002595
+[[32mOK[0m] checksums are equal
+Load powervirus on all DPUs
+Load checskum on dpu
+Load input data
+Run program on DPU(s)

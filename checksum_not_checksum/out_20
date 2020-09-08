@@ -1,0 +1,4 @@
+rm -f 	build/.NR_DPUS_*_NR_TASKLETS_*.conf
+touch 	build/.NR_DPUS_DPU_ALLOCATE_ALL_NR_TASKLETS_24.conf
+dpu-upmem-dpurte-clang -Wall -Wextra -Werror -g -Icommon -O2 -DNR_TASKLETS=24 -o build/checksum_dpu dpu/dpu.c
+python3 host/host_powervirus.py DPU_ALLOCATE_ALL 24

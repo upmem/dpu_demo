@@ -1,0 +1,253 @@
+rm -f 	build/.NR_DPUS_*_NR_TASKLETS_*.conf
+touch 	build/.NR_DPUS_DPU_ALLOCATE_ALL_NR_TASKLETS_24.conf
+dpu-upmem-dpurte-clang -Wall -Wextra -Werror -g -Icommon -O2 -DNR_TASKLETS=24 -o build/checksum_dpu dpu/dpu.c
+python3 host/host_powervirus.py DPU_ALLOCATE_ALL 24
+Allocated 1541 DPU(s)
+Load powervirus on all DPUs
+Load checksum on dpu 0x30000707
+Load input data
+Load checksum on dpu 0x30010707
+Load input data
+Load checksum on dpu 0x300a0707
+Load input data
+Load checksum on dpu 0x300c0707
+Load input data
+Load checksum on dpu 0x300d0707
+Load input data
+Load checksum on dpu 0x300e0707
+Load input data
+Load checksum on dpu 0x30100707
+Load input data
+Load checksum on dpu 0x30110707
+Load input data
+Load checksum on dpu 0x30120707
+Load input data
+Load checksum on dpu 0x30130707
+Load input data
+Load checksum on dpu 0x30020707
+Load input data
+Load checksum on dpu 0x30140707
+Load input data
+Load checksum on dpu 0x30160707
+Load input data
+Load checksum on dpu 0x30170707
+Load input data
+Load checksum on dpu 0x30180707
+Load input data
+Load checksum on dpu 0x30190707
+Load input data
+Load checksum on dpu 0x301c0707
+Load input data
+Load checksum on dpu 0x301d0707
+Load input data
+Load checksum on dpu 0x30030707
+Load input data
+Load checksum on dpu 0x301e0707
+Load input data
+Load checksum on dpu 0x301f0707
+Load input data
+Load checksum on dpu 0x30040707
+Load input data
+Load checksum on dpu 0x30060707
+Load input data
+Load checksum on dpu 0x30070707
+Load input data
+Load checksum on dpu 0x30080707
+Load input data
+Load checksum on dpu 0x30090707
+Load input data
+Run program on DPU(s)
+Retrieve results
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16568e512
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x165a4b627
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.223 cycles/byte
+checksum computed by the DPU = 0x1658cb28b
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.223 cycles/byte
+checksum computed by the DPU = 0x165e6b77c
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x1659e85d5
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.223 cycles/byte
+checksum computed by the DPU = 0x16572c218
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36084e+09 cycles
+performance         = 162.225 cycles/byte
+checksum computed by the DPU = 0x1654b6e72
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36084e+09 cycles
+performance         = 162.225 cycles/byte
+checksum computed by the DPU = 0x165680c25
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36084e+09 cycles
+performance         = 162.225 cycles/byte
+checksum computed by the DPU = 0x165719472
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36082e+09 cycles
+performance         = 162.222 cycles/byte
+checksum computed by the DPU = 0x1659055f3
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.223 cycles/byte
+checksum computed by the DPU = 0x165629207
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36084e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16578e6a4
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16528d67a
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.223 cycles/byte
+checksum computed by the DPU = 0x1650a0999
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x164d91d69
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x1650ecc70
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x164e5d201
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16586785a
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16539d0b6
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36084e+09 cycles
+performance         = 162.225 cycles/byte
+checksum computed by the DPU = 0x16586a877
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36085e+09 cycles
+performance         = 162.226 cycles/byte
+checksum computed by the DPU = 0x164f207ac
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x1657fae36
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x165509f35
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x165e9ddae
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16587795c
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+Check dpu result
+DPU execution time  = 1.36083e+09 cycles
+performance         = 162.224 cycles/byte
+checksum computed by the DPU = 0x16548965e
+actual checksum value        = 0x3fbd7a66
+0x30090707[[31mERROR[0m] checksums differ!
+TIME = 21.826038947998313s
+Load powervirus on all DPUs
+Load checksum on dpu 0x30000706
+Load input data
+Load checksum on dpu 0x30010706
+Load input data
+Load checksum on dpu 0x300a0706
+Load input data
+Load checksum on dpu 0x300c0706
+Load input data
+Load checksum on dpu 0x300d0706
+Load input data
+Load checksum on dpu 0x300e0706
+Load input data
+Load checksum on dpu 0x30100706
+Load input data
+Load checksum on dpu 0x30110706
+Load input data
+Load checksum on dpu 0x30120706
+Load input data
+Load checksum on dpu 0x30130706
+Load input data
+Load checksum on dpu 0x30020706
+Load input data
+Load checksum on dpu 0x30140706
+Load input data
+Load checksum on dpu 0x30160706
+Load input data
+Load checksum on dpu 0x30170706
+Load input data
+Load checksum on dpu 0x30180706
+Load input data
+Load checksum on dpu 0x30190706
+Load input data
+Load checksum on dpu 0x301c0706
+Load input data
+Load checksum on dpu 0x301d0706
