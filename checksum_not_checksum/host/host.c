@@ -98,7 +98,7 @@ int main()
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("Allocated %d DPU(s)\n", nr_of_dpus);
 
-    dpu_test_file = mmap(0, nr_of_dpus * 2048, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    dpu_test_file = mmap(0, nr_of_dpus * 256, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (dpu_test_file == MAP_FAILED) {
         printf("Error allocating dpu_test_file\n");
         exit(-1);
@@ -106,27 +106,37 @@ int main()
 
     // Create an "input file" with arbitrary data.
     // Compute its theoretical checksum value.
-    for (int i = 0; i < 50000; ++i) {
+    int nb_errors = 0;
+    for (int i = 0; i < 500000; ++i) {
+        if (i % 1000 == 0)
+            printf("Pass %d...%d errors\n", i, nb_errors);
         create_test_file();
 
         //printf("Load input data\n");
         DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
+        //DPU_FOREACH (dpu_set, dpu, each_dpu) {
+        //    DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
+        //}
+        //DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, 256, DPU_XFER_DEFAULT));
+
         //printf("Run program on DPU(s)\n");
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
+        //printf("dpou finished\n");
 
         // Read back what's in MRAM and compute the checksum from the host again.
         // 2/ Read mram
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 2048]));
+            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
         }
-        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, 2048, DPU_XFER_DEFAULT));
+        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, 256, DPU_XFER_DEFAULT));
 
         // 3/ Check the end mark
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            for (int j = 0; j < 2048; ++j) {
-                if (((uint8_t *)&dpu_test_file[each_dpu * 2048])[j] != 0) {
+            for (int j = 0; j < 256; ++j) {
+                if (((uint8_t *)&dpu_test_file[each_dpu * 256])[j] != 0) {
                     printf("ERROR not null in dpu%d byte %d at pass %d!!\n", each_dpu, j, i);
+                    nb_errors++;
                 }
             }
         }

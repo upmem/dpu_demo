@@ -47,8 +47,13 @@ int main()
     uint32_t tasklet_id = me();
 
     if (tasklet_id == 0) {
-        uint8_t wram_poison[2048] = { 0 };
-        mram_write(wram_poison, &DPU_BUFFER[0], 2048);
+        uint8_t wram_poison[256] = { 0 };
+        uint8_t mram_read_poison[256];
+            mram_write(wram_poison, &DPU_BUFFER[0], 256);
+            mram_read(&DPU_BUFFER[0], mram_read_poison, 256);
+            for (int i = 0; i < 256; ++i)
+                if (mram_read_poison[i])
+                    halt();
     }
 
     return 0;
