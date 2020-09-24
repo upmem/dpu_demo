@@ -40,7 +40,7 @@
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
-static uint8_t test_file[BUFFER_SIZE];
+#define NB_SAVED_BUFFERS    10
 
 static uint8_t *dpu_test_file;
 /**
@@ -48,25 +48,25 @@ static uint8_t *dpu_test_file;
  *
  * @return the theorical checksum value
  */
-static uint64_t create_test_file()
-{
-    uint64_t checksum = 0;
-    struct timeval time;
-
-    gettimeofday(&time,NULL);
-
-     // microsecond has 1 000 000
-     // Assuming you did not need quite that accuracy
-     // Also do not assume the system clock has that accuracy.
-     srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
-
-    for (unsigned int i = 0; i < BUFFER_SIZE; i++) {
-        test_file[i] = (unsigned char)(rand());
-        checksum += test_file[i];
-    }
-
-    return checksum;
-}
+//static uint64_t create_test_file(int idx)
+//{
+//    uint64_t checksum = 0;
+//    struct timeval time;
+//
+//    gettimeofday(&time,NULL);
+//
+//     // microsecond has 1 000 000
+//     // Assuming you did not need quite that accuracy
+//     // Also do not assume the system clock has that accuracy.
+//     srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
+//
+//    for (unsigned int i = 0; i < BUFFER_SIZE; i++) {
+//        test_file[idx % NB_SAVED_BUFFERS][i] = (unsigned char)(rand());
+//        checksum += test_file[idx % NB_SAVED_BUFFERS][i];
+//    }
+//
+//    return checksum;
+//}
 
 //static void compute_and_check_checksum(uint64_t theoretical_checksum, uint8_t *ptr)
 //{
@@ -81,6 +81,12 @@ static uint64_t create_test_file()
 //        while (1);
 //    }
 //}
+
+uint64_t concat_word(int i )
+{
+    uint64_t mod_i = (uint64_t)(i & 0xFF);
+    return (mod_i << 56 | mod_i << 48 | mod_i << 40 | mod_i << 32 | mod_i << 24 | mod_i << 16 | mod_i << 8 | mod_i);
+}
 
 /**
  * @brief Main of the Host Application.
@@ -107,13 +113,13 @@ int main()
     // Create an "input file" with arbitrary data.
     // Compute its theoretical checksum value.
     int nb_errors = 0;
-    for (int i = 0; i < 500000; ++i) {
+    for (int i = 0; i < 500000000; ++i) {
         if (i % 1000 == 0)
             printf("Pass %d...%d errors\n", i, nb_errors);
-        create_test_file();
+        //create_test_file(i);
 
         //printf("Load input data\n");
-        DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
+        //DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file[i % NB_SAVED_BUFFERS], BUFFER_SIZE));
 
         //DPU_FOREACH (dpu_set, dpu, each_dpu) {
         //    DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
@@ -129,14 +135,15 @@ int main()
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
             DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
         }
-        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, 256, DPU_XFER_DEFAULT));
+        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0 /* 32 * 1024 * 1024 */, 256, DPU_XFER_DEFAULT));
 
         // 3/ Check the end mark
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            for (int j = 0; j < 256; ++j) {
-                if (((uint8_t *)&dpu_test_file[each_dpu * 256])[j] != 0) {
-                    printf("ERROR not null in dpu%d byte %d at pass %d!!\n", each_dpu, j, i);
+            for (uint32_t j = 0; j < 256 / sizeof(uint64_t); ++j) {
+                if (((uint64_t *)&dpu_test_file[each_dpu * 256])[j] != concat_word(i)) {
+                    printf("%x.%d.%d at word %d at pass %d", dpu_get_rank_id(dpu_get_rank(dpu_from_set(dpu))), dpu_get_slice_id(dpu_from_set(dpu)), dpu_get_member_id(dpu_from_set(dpu)), j, i);
                     nb_errors++;
+                    printf("\t%lx != %lx\n", ((uint64_t *)&dpu_test_file[each_dpu * 256])[j], concat_word(i));
                 }
             }
         }
