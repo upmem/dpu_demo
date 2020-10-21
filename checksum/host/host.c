@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <dpu_management.h>
 
 #include "common.h"
 
@@ -45,7 +46,7 @@ static uint8_t test_file[BUFFER_SIZE];
 static uint64_t create_test_file()
 {
     uint64_t checksum = 0;
-    struct timeval time; 
+    struct timeval time;
 
     gettimeofday(&time,NULL);
 
@@ -124,11 +125,11 @@ int main()
         //printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
         //printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
         if (dpu_status) {
-	    if (each_dpu == 0)
-		    printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal = 0x%16lx\n", dpu_checksum);
+            if (each_dpu == 0)
+                printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal = 0x%16lx\n", dpu_checksum);
         } else {
-            printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
-	    while (1);
+            printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] %x.%d.%d: checksums differ!\n", dpu_get_rank_id(dpu_get_rank(dpu_from_set(dpu))), dpu_get_slice_id(dpu_from_set(dpu)), dpu_get_member_id(dpu_from_set(dpu)));
+            while (1);
         }
     }
     }

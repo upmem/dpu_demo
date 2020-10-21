@@ -51,12 +51,12 @@ int main()
         uint8_t wram_poison[256];
         uint8_t mram_read_poison[256];
 
-        if (idx) {
-            mram_read(&DPU_BUFFER[0 /*32 * 1024 * 1024*/], mram_read_poison, 256);
-            for (int i = 0; i < 256; ++i)
-                if (mram_read_poison[i] != ((idx - 1) & 0xFF))
-                    halt();
-        }
+        //if (idx) {
+        //    mram_read(&DPU_BUFFER[0 /*32 * 1024 * 1024*/], mram_read_poison, 256);
+        //    for (int i = 0; i < 256; ++i)
+        //        if (mram_read_poison[i] != ((idx - 1) & 0xFF))
+        //            halt();
+        //}
 
         memset(wram_poison, idx & 0xFF, 256);
 
