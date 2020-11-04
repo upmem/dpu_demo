@@ -42,7 +42,7 @@
 
 #define NB_SAVED_BUFFERS    10
 
-static uint8_t *dpu_test_file;
+static uint64_t *dpu_test_file;
 /**
  * @brief creates a "test file"
  *
@@ -104,7 +104,7 @@ int main()
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("Allocated %d DPU(s)\n", nr_of_dpus);
 
-    dpu_test_file = mmap(0, nr_of_dpus * 256, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    dpu_test_file = mmap(0, nr_of_dpus * 256 * sizeof(uint64_t), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (dpu_test_file == MAP_FAILED) {
         printf("Error allocating dpu_test_file\n");
         exit(-1);
@@ -113,37 +113,29 @@ int main()
     // Create an "input file" with arbitrary data.
     // Compute its theoretical checksum value.
     int nb_errors = 0;
-    for (int i = 0; i < 500000000; ++i) {
+    for (uint64_t i = 0; i < 500000000; ++i) {
         if (i % 1000 == 0)
-            printf("Pass %d...%d errors\n", i, nb_errors);
-        //create_test_file(i);
+            printf("Pass %lu...%d errors\n", i, nb_errors);
 
-        //printf("Load input data\n");
-        //DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file[i % NB_SAVED_BUFFERS], BUFFER_SIZE));
-
-        //DPU_FOREACH (dpu_set, dpu, each_dpu) {
-        //    DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
-        //}
-        //DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, 256, DPU_XFER_DEFAULT));
-
-        //printf("Run program on DPU(s)\n");
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
-        //printf("dpou finished\n");
-
+#define DPU_ONLY 0
         // Read back what's in MRAM and compute the checksum from the host again.
         // 2/ Read mram
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
+            if (dpu_get_member_id(dpu_from_set(dpu)) == DPU_ONLY)
+                DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_test_file[each_dpu * 256]));
         }
-        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0 /* 32 * 1024 * 1024 */, 256, DPU_XFER_DEFAULT));
+        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, 256 * sizeof(uint64_t), DPU_XFER_DEFAULT));
 
         // 3/ Check the end mark
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            for (uint32_t j = 0; j < 256 / sizeof(uint64_t); ++j) {
-                if (((uint64_t *)&dpu_test_file[each_dpu * 256])[j] != concat_word(i)) {
-                    printf("%x.%d.%d at word %d at pass %d", dpu_get_rank_id(dpu_get_rank(dpu_from_set(dpu))), dpu_get_slice_id(dpu_from_set(dpu)), dpu_get_member_id(dpu_from_set(dpu)), j, i);
+            if (dpu_get_member_id(dpu_from_set(dpu)) != DPU_ONLY)
+                continue;
+            for (uint32_t j = 0; j < 256; ++j) {
+                if (dpu_test_file[each_dpu * 256 + j] != i) {
+                    printf("%x.%d.%d at word %d at pass %lu", dpu_get_rank_id(dpu_get_rank(dpu_from_set(dpu))), dpu_get_slice_id(dpu_from_set(dpu)), dpu_get_member_id(dpu_from_set(dpu)), j, i);
                     nb_errors++;
-                    printf("\t%lx != %lx\n", ((uint64_t *)&dpu_test_file[each_dpu * 256])[j], concat_word(i));
+                    printf("\t%lx != %lx\n", dpu_test_file[each_dpu * 256 + j], i);
                 }
             }
         }

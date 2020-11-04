@@ -37,7 +37,7 @@
 #include "common.h"
 
 __mram_noinit uint8_t DPU_BUFFER[64 << 20]; //BUFFER_SIZE];
-static int idx = 0;
+static uint64_t idx = 0;
 /**
  * @fn main
  * @brief main function executed by each tasklet
@@ -48,22 +48,24 @@ int main()
     uint32_t tasklet_id = me();
 
     if (tasklet_id == 0) {
-        uint8_t wram_poison[256];
-        uint8_t mram_read_poison[256];
+        uint64_t wram_poison[256];
+        uint64_t mram_read_poison[256];
 
         if (idx) {
-            mram_read(&DPU_BUFFER[0 /*32 * 1024 * 1024*/], mram_read_poison, 256);
+            mram_read(&DPU_BUFFER[0 /*32 * 256 * 256*/], mram_read_poison, 256 * sizeof(uint64_t));
             for (int i = 0; i < 256; ++i)
-                if (mram_read_poison[i] != ((idx - 1) & 0xFF))
+                if (mram_read_poison[i] != ((idx - 1)))
                     halt();
         }
 
-        memset(wram_poison, idx & 0xFF, 256);
-
-        mram_write(wram_poison, &DPU_BUFFER[0 /*32 * 1024 * 1024*/], 256);
-        mram_read(&DPU_BUFFER[0 /*32 * 1024 * 1024*/], mram_read_poison, 256);
+        //memset(wram_poison, idx & 0xFF, 256);
         for (int i = 0; i < 256; ++i)
-            if (mram_read_poison[i] != (idx & 0xFF))
+            wram_poison[i] = idx;
+
+        mram_write(wram_poison, &DPU_BUFFER[0 /*32 * 256 * 256*/], 256 * sizeof(uint64_t));
+        mram_read(&DPU_BUFFER[0 /*32 * 256 * 256*/], mram_read_poison, 256 * sizeof(uint64_t));
+        for (int i = 0; i < 256; ++i)
+            if (mram_read_poison[i] != (idx))
                 halt();
         idx++;
     }
