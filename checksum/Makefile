@@ -35,7 +35,7 @@ ${HOST_TARGET}: ${HOST_SOURCES} ${COMMON_INCLUDES} ${CONF}
 	$(CC) -o $@ ${HOST_SOURCES} ${HOST_FLAGS}
 
 ${DPU_TARGET}: ${DPU_SOURCES} ${COMMON_INCLUDES} ${CONF}
-	dpu-upmem-dpurte-clang ${DPU_FLAGS} -o $@ ${DPU_SOURCES}
+	dpu-upmem-dpurte-clang -nostartfiles -Wl,-Tdpu.lds ${DPU_FLAGS} -o $@ ${DPU_SOURCES} -Wl,-defsym=NR_TASKLETS=${NR_TASKLETS}
 
 clean:
 	$(RM) -r $(BUILDDIR)

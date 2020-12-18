@@ -30,9 +30,7 @@
  */
 #include <defs.h>
 #include <mram.h>
-#include <perfcounter.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "common.h"
 
@@ -40,8 +38,6 @@
 #define BLOCK_SIZE (256)
 
 __dma_aligned uint8_t DPU_CACHES[NR_TASKLETS][BLOCK_SIZE];
-__host dpu_results_t DPU_RESULTS;
-
 __mram_noinit uint8_t DPU_BUFFER[BUFFER_SIZE];
 
 /**
@@ -49,16 +45,16 @@ __mram_noinit uint8_t DPU_BUFFER[BUFFER_SIZE];
  * @brief main function executed by each tasklet
  * @return the checksum result
  */
-int main()
+int __bootstrap()
 {
     uint32_t tasklet_id = me();
     uint8_t *cache = DPU_CACHES[tasklet_id];
-    dpu_result_t *result = &DPU_RESULTS.tasklet_result[tasklet_id];
     uint32_t checksum = 0;
 
-    /* Initialize once the cycle counter */
-    if (tasklet_id == 0)
-        perfcounter_config(COUNT_CYCLES, true);
+    // start other threads
+    if (me() < NR_TASKLETS - 1) {
+        asm("boot id, 1");
+    }
 
     for (uint32_t buffer_idx = tasklet_id * BLOCK_SIZE; buffer_idx < BUFFER_SIZE; buffer_idx += (NR_TASKLETS * BLOCK_SIZE)) {
 
@@ -71,10 +67,6 @@ int main()
         }
     }
 
-    /* keep the 32-bit LSB on the 64-bit cycle counter */
-    result->cycles = (uint32_t)perfcounter_get();
-    result->checksum = checksum;
-
-    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum);
-    return 0;
+    asm ("stop");
+    return checksum;
 }
