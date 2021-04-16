@@ -66,6 +66,7 @@ int main()
     bool status = true;
 
     DPU_ASSERT(dpu_alloc(NR_DPUS, NULL, &dpu_set));
+    for (int i = 0; i < 1000000; ++i) {
     DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
 
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
@@ -81,9 +82,9 @@ int main()
     printf("Run program on DPU(s)\n");
     DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-    DPU_FOREACH (dpu_set, dpu) {
-        DPU_ASSERT(dpu_log_read(dpu, stdout));
-    }
+    //DPU_FOREACH (dpu_set, dpu) {
+    //    DPU_ASSERT(dpu_log_read(dpu, stdout));
+    //}
 
     printf("Retrieve results\n");
     dpu_results_t results[nr_of_dpus];
@@ -119,6 +120,7 @@ int main()
         } else {
             printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
         }
+    }
     }
 
     DPU_ASSERT(dpu_free(dpu_set));
