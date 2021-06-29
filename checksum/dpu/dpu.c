@@ -36,8 +36,11 @@
 
 #include "common.h"
 
+#define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
+#define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
+
 /* Use blocks of 256 bytes */
-#define BLOCK_SIZE (256)
+#define BLOCK_SIZE (2048)
 
 __dma_aligned uint8_t DPU_CACHES[NR_TASKLETS][BLOCK_SIZE];
 __host dpu_results_t DPU_RESULTS;
@@ -55,6 +58,7 @@ int main()
     uint8_t *cache = DPU_CACHES[tasklet_id];
     dpu_result_t *result = &DPU_RESULTS.tasklet_result[tasklet_id];
     uint32_t checksum = 0;
+    uint32_t temp;
 
     /* Initialize once the cycle counter */
     if (tasklet_id == 0)
@@ -66,8 +70,9 @@ int main()
         mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
 
         /* computes the checksum of a cached block */
-        for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx++) {
-            checksum += cache[cache_idx];
+        for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx = cache_idx + 4) {
+            temp = (cache[cache_idx+3] * cache[cache_idx+2] << 16) + cache[cache_idx+1] * cache[cache_idx];
+            checksum += ROTLEFT(temp,16);;
         }
     }
 
@@ -75,6 +80,9 @@ int main()
     result->cycles = (uint32_t)perfcounter_get();
     result->checksum = checksum;
 
+    #ifdef VERBOSE
     printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum);
+    #endif
+    
     return 0;
 }
