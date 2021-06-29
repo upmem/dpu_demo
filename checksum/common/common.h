@@ -16,6 +16,8 @@
 
 #include <stdint.h>
 
+#define VERBOSE
+
 typedef struct {
     uint32_t checksum;
     uint32_t cycles;

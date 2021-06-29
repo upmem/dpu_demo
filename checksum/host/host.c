@@ -23,6 +23,7 @@
 #include <dpu_management.h>
 #include <dpu_target_macros.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -74,13 +75,15 @@ int main(int argc, char **argv)
     uint32_t theoretical_checksum, dpu_checksum;
     uint32_t dpu_cycles;
     bool status = true;
-    const int iterations= argc > 0 ? atoi(argv[1]) : 0;
+    const int iterations= argc > 1 ? atoi(argv[1]) : 0;
 
     DPU_ASSERT(dpu_alloc(NR_DPUS, NULL, &dpu_set));
     DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
 
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("Allocated %d DPU(s)\n", nr_of_dpus);
+
+    uint8_t *dpu_buffers = (uint8_t*)calloc(nr_of_dpus, BUFFER_SIZE);
 
     #ifdef VERBOSE
     printf("iterations %i\n",iterations);
@@ -128,6 +131,12 @@ int main(int argc, char **argv)
         }
         DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_RESULTS), 0, sizeof(dpu_results_t), DPU_XFER_DEFAULT));
 
+        // copy back the buffer to check its integrity
+        DPU_FOREACH (dpu_set, dpu, each_dpu) {
+            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_buffers[each_dpu * BUFFER_SIZE]));
+        }
+        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, BUFFER_SIZE, DPU_XFER_DEFAULT));
+
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
             bool dpu_status;
             dpu_checksum = 0;
@@ -150,6 +159,12 @@ int main(int argc, char **argv)
             //printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
             //printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
 
+            // checking integrity of the dpu buffer
+            if(memcmp(test_file, &dpu_buffers[each_dpu * BUFFER_SIZE], BUFFER_SIZE))
+                printf("DPU input buffer is corrupted\n");
+            else
+                printf("DPU input buffer is correct\n");
+
             if (!dpu_status) {
                 printf("\n");
                 uint32_t rank_id = dpu_get_rank_id(dpu_get_rank(dpu_t)) & DPU_TARGET_MASK;
@@ -158,6 +173,7 @@ int main(int argc, char **argv)
                 printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
                 printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
                 printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ! => DPU %d.%d.%d\n", rank_id, ci_id, dpu_id);
+
             }
             #ifdef VERBOSE
             else {
@@ -178,5 +194,6 @@ int main(int argc, char **argv)
 
 
     DPU_ASSERT(dpu_free(dpu_set));
+    free(dpu_buffers);
     return status ? 0 : -1;
 }
