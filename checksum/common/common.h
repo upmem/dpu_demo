@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 
-#define VERBOSE
+//#define VERBOSE
 
 typedef struct {
     uint32_t checksum;

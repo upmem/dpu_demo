@@ -131,12 +131,6 @@ int main(int argc, char **argv)
         }
         DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_RESULTS), 0, sizeof(dpu_results_t), DPU_XFER_DEFAULT));
 
-        // copy back the buffer to check its integrity
-        DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_buffers[each_dpu * BUFFER_SIZE]));
-        }
-        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, BUFFER_SIZE, DPU_XFER_DEFAULT));
-
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
             bool dpu_status;
             dpu_checksum = 0;
@@ -159,12 +153,6 @@ int main(int argc, char **argv)
             //printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
             //printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
 
-            // checking integrity of the dpu buffer
-            if(memcmp(test_file, &dpu_buffers[each_dpu * BUFFER_SIZE], BUFFER_SIZE))
-                printf("DPU input buffer is corrupted\n");
-            else
-                printf("DPU input buffer is correct\n");
-
             if (!dpu_status) {
                 printf("\n");
                 uint32_t rank_id = dpu_get_rank_id(dpu_get_rank(dpu_t)) & DPU_TARGET_MASK;
@@ -173,6 +161,16 @@ int main(int argc, char **argv)
                 printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
                 printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
                 printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ! => DPU %d.%d.%d\n", rank_id, ci_id, dpu_id);
+
+            // checking integrity of the dpu buffer
+            // copy back the buffer to check its integrity
+            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_buffers[each_dpu * BUFFER_SIZE]));
+            DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, BUFFER_SIZE, DPU_XFER_DEFAULT));
+
+            if((memcmp(test_file, &dpu_buffers[each_dpu * BUFFER_SIZE], BUFFER_SIZE))!=0)
+                printf("DPU input buffer is corrupted\n");
+            else
+                printf("DPU input buffer is correct\n");
 
             }
             #ifdef VERBOSE
