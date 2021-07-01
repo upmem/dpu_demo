@@ -57,7 +57,7 @@ int main()
     uint32_t tasklet_id = me();
     uint8_t *cache = DPU_CACHES[tasklet_id];
     dpu_result_t *result = &DPU_RESULTS.tasklet_result[tasklet_id];
-    uint32_t checksum = 0;
+    uint32_t checksum[NB_CKSUM] = {0};
     uint32_t temp;
 
     /* Initialize once the cycle counter */
@@ -66,23 +66,36 @@ int main()
 
     for (uint32_t buffer_idx = tasklet_id * BLOCK_SIZE; buffer_idx < BUFFER_SIZE; buffer_idx += (NR_TASKLETS * BLOCK_SIZE)) {
 
+#ifdef RELOAD_MRAM
+        for(uint32_t iter = 0; iter < NB_CKSUM; iter++) {
+            /* load cache with current mram block. */
+            mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
+#else
         /* load cache with current mram block. */
         mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
 
-        /* computes the checksum of a cached block */
-        for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx = cache_idx + 4) {
-            temp = (cache[cache_idx+3] * cache[cache_idx+2] << 16) + cache[cache_idx+1] * cache[cache_idx];
-            checksum += ROTLEFT(temp,16);;
+        for(uint32_t iter = 0; iter < NB_CKSUM; iter++) {
+#endif
+            /* computes the checksum of a cached block */
+            for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx = cache_idx + 4) {
+                temp = (cache[cache_idx+3] * cache[cache_idx+2] << 16) + cache[cache_idx+1] * cache[cache_idx];
+                checksum[iter] += ROTLEFT(temp,16);;
+            }
         }
+
     }
 
+    //if(checksum != checksum2 || checksum != checksum3 || checksum2 != checksum3)
+//        printf("---%d %d %d", checksum, checksum2, checksum3);
+
+    for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
+        result->checksum[iter] = checksum[iter];
     /* keep the 32-bit LSB on the 64-bit cycle counter */
     result->cycles = (uint32_t)perfcounter_get();
-    result->checksum = checksum;
 
     #ifdef VERBOSE
-    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum);
+    printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum[0]);
     #endif
-    
+
     return 0;
 }

@@ -17,9 +17,11 @@
 #include <stdint.h>
 
 //#define VERBOSE
+#define NB_CKSUM 1
+#define RELOAD_MRAM
 
 typedef struct {
-    uint32_t checksum;
+    uint32_t checksum[NB_CKSUM];
     uint32_t cycles;
 } dpu_result_t;
 

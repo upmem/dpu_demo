@@ -72,7 +72,8 @@ int main(int argc, char **argv)
 {
     struct dpu_set_t dpu_set, dpu;
     uint32_t nr_of_dpus;
-    uint32_t theoretical_checksum, dpu_checksum;
+    uint32_t theoretical_checksum;
+    uint32_t dpu_checksum[NB_CKSUM] = {0};
     uint32_t dpu_cycles;
     bool status = true;
     const int iterations= argc > 1 ? atoi(argv[1]) : 0;
@@ -133,19 +134,21 @@ int main(int argc, char **argv)
 
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
             bool dpu_status;
-            dpu_checksum = 0;
+            for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
+                dpu_checksum[iter] = 0;
             dpu_cycles = 0;
 
             // Retrieve tasklet results and compute the final checksum.
             for (unsigned int each_tasklet = 0; each_tasklet < NR_TASKLETS; each_tasklet++) {
                 dpu_result_t *result = &results[each_dpu].tasklet_result[each_tasklet];
 
-                dpu_checksum += result->checksum;
+                for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
+                    dpu_checksum[iter] += result->checksum[iter];
                 if (result->cycles > dpu_cycles)
                     dpu_cycles = result->cycles;
             }
 
-            dpu_status = (dpu_checksum == theoretical_checksum);
+            dpu_status = (dpu_checksum[0] == theoretical_checksum);
             status = status && dpu_status;
 
             struct dpu_t *dpu_t = dpu_from_set(dpu);
@@ -159,7 +162,10 @@ int main(int argc, char **argv)
                 uint32_t ci_id = dpu_get_slice_id(dpu_t);
                 uint32_t dpu_id = dpu_get_member_id(dpu_t);
                 printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
-                printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
+                printf("checksum computed by the DPU =");
+                for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
+                    printf(" 0x%08x", dpu_checksum[iter]);
+                printf("\n");
                 printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ! => DPU %d.%d.%d\n", rank_id, ci_id, dpu_id);
 
             // checking integrity of the dpu buffer
