@@ -40,7 +40,9 @@
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
 
 /* Use blocks of 256 bytes */
-#define BLOCK_SIZE (2048)
+#define BLOCK_SIZE (256)
+
+#define PRINT_BUFFER_SIZE (11*NB_CKSUM + 25)
 
 __dma_aligned uint8_t DPU_CACHES[NR_TASKLETS][BLOCK_SIZE];
 __host dpu_results_t DPU_RESULTS;
@@ -59,6 +61,7 @@ int main()
     dpu_result_t *result = &DPU_RESULTS.tasklet_result[tasklet_id];
     uint32_t checksum[NB_CKSUM] = {0};
     uint32_t temp;
+//    char print_buffer[PRINT_BUFFER_SIZE];
 
     /* Initialize once the cycle counter */
     if (tasklet_id == 0)
@@ -69,6 +72,7 @@ int main()
 #ifdef RELOAD_MRAM
         for(uint32_t iter = 0; iter < NB_CKSUM; iter++) {
             /* load cache with current mram block. */
+            mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
             mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
 #else
         /* load cache with current mram block. */
@@ -85,8 +89,6 @@ int main()
 
     }
 
-    //if(checksum != checksum2 || checksum != checksum3 || checksum2 != checksum3)
-//        printf("---%d %d %d", checksum, checksum2, checksum3);
 
     for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
         result->checksum[iter] = checksum[iter];
@@ -94,6 +96,16 @@ int main()
     result->cycles = (uint32_t)perfcounter_get();
 
     #ifdef VERBOSE
+    /*
+    uint32_t n = 0;
+    n = sprintf(print_buffer, "[%02d] Checksum =", tasklet_id);
+    for(uint32_t iter = 0; iter < NB_CKSUM - 1; iter++){
+        n += sprintf(print_buffer + n , " 0x%08x", checksum[iter]);
+    }
+    n += sprintf(print_buffer + n, "\n");
+    printf("%s", print_buffer);
+    */
+    //printf("[%02d] Checksum = 0x%08x 0x%08x 0x%08x\n", tasklet_id, checksum[0], checksum[1], checksum[2]);
     printf("[%02d] Checksum = 0x%08x\n", tasklet_id, result->checksum[0]);
     #endif
 
