@@ -73,7 +73,6 @@ int main()
         for(uint32_t iter = 0; iter < NB_CKSUM; iter++) {
             /* load cache with current mram block. */
             mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
-            mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
 #else
         /* load cache with current mram block. */
         mram_read(&DPU_BUFFER[buffer_idx], cache, BLOCK_SIZE);
