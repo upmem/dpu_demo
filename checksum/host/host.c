@@ -82,13 +82,13 @@ int main(int argc, char **argv)
     DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
 
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
-    printf("Allocated %d DPU(s)\n", nr_of_dpus);
+    printf("[INFO] Allocated %d DPU(s)\n", nr_of_dpus);
 
     uint8_t *dpu_buffers = (uint8_t*)calloc(nr_of_dpus, BUFFER_SIZE);
 
     #ifdef VERBOSE
-    printf("iterations %i\n",iterations);
-    printf("SEED %i\n", SEED);
+    printf("[INFO] Iterations %i\n",iterations);
+    printf("[INFO] SEED %i\n", SEED);
     #endif
 
     srand(SEED);
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
         // Compute its theoretical checksum value.
         theoretical_checksum = create_test_file();
 
-        printf("\rPASS %i/%i", i,iterations);
+        printf("\r[INFO] PASS %i/%i", i,iterations);
         #ifdef VERBOSE
         printf("\n");
         #else
@@ -106,12 +106,12 @@ int main(int argc, char **argv)
         #endif
 
         #ifdef VERBOSE
-        printf("Load input data\n");
+        printf("[INFO] Load input data\n");
         #endif
         DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
         #ifdef VERBOSE
-        printf("Run program on DPU(s)\n");
+        printf("[INFO] Run program on DPU(s)\n");
         #endif
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
@@ -153,39 +153,39 @@ int main(int argc, char **argv)
 
             struct dpu_t *dpu_t = dpu_from_set(dpu);
 
-            //printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
-            //printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
+            //printf("[INFO] DPU execution time  = %g cycles\n", (double)dpu_cycles);
+            //printf("[INFO] Performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
 
             if (!dpu_status) {
                 printf("\n");
                 uint32_t rank_id = dpu_get_rank_id(dpu_get_rank(dpu_t)) & DPU_TARGET_MASK;
                 uint32_t ci_id = dpu_get_slice_id(dpu_t);
                 uint32_t dpu_id = dpu_get_member_id(dpu_t);
-                printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
-                printf("checksum computed by the DPU =");
+                printf("[INFO] Checksum computed by the HOST = 0x%08x\n", theoretical_checksum);
+                printf("[INFO] Checksum computed by the DPU  =");
                 for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
                     printf(" 0x%08x", dpu_checksum[iter]);
                 printf("\n");
                 printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ! => DPU %d.%d.%d\n", rank_id, ci_id, dpu_id);
 
-            // checking integrity of the dpu buffer
-            // copy back the buffer to check its integrity
-            DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_buffers[each_dpu * BUFFER_SIZE]));
-            DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, BUFFER_SIZE, DPU_XFER_DEFAULT));
+                // checking integrity of the dpu buffer
+                // copy back the buffer to check its integrity
+                DPU_ASSERT(dpu_prepare_xfer(dpu, &dpu_buffers[each_dpu * BUFFER_SIZE]));
+                DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, BUFFER_SIZE, DPU_XFER_DEFAULT));
 
-            if((memcmp(test_file, &dpu_buffers[each_dpu * BUFFER_SIZE], BUFFER_SIZE))!=0)
-                printf("DPU input buffer is corrupted\n");
-            else
-                printf("DPU input buffer is correct\n");
+                if((memcmp(test_file, &dpu_buffers[each_dpu * BUFFER_SIZE], BUFFER_SIZE))!=0)
+                    printf("[INFO] DPU input (MRAM) buffer is " ANSI_COLOR_RED "CORRUPTED" ANSI_COLOR_RESET "\n");
+                else
+                    printf("[INFO] DPU input (MRAM) buffer is " ANSI_COLOR_GREEN "CORRECT" ANSI_COLOR_RESET "\n");
 
+                }
+                #ifdef VERBOSE
+                else {
+                    printf("[INFO] checksums are " ANSI_COLOR_GREEN "EQUAL" ANSI_COLOR_RESET "\n");
+                }
+                #endif
             }
-            #ifdef VERBOSE
-            else {
-                printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
-            }
-            #endif
         }
-    }
 
     printf("\n");
     printf("----------------------------------------------------------\n");
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
     if (status) {
         printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] ALL CHECKSUMS ARE EQUAL\n");
     } else {
-        printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] ONE ORT MORE CHECKSUMS DIFFER!\n");
+        printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] ONE OR MORE CHECKSUMS DIFFER !\n");
     }
 
 
