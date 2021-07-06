@@ -51,15 +51,21 @@ static uint32_t create_test_file()
 {
 
     uint32_t checksum = 0;
-    uint32_t temp;
 
     for (unsigned int i = 0; i < BUFFER_SIZE; i++) {
+    #ifdef MODE_ONE
+        test_file[i] = 1;
+    #else
         test_file[i] = (unsigned char)(rand());
+    #endif
     }
 
     for (unsigned int i = 0; i < BUFFER_SIZE; i=i+4) {
-        temp = (test_file[i+3] * test_file[i+2] << 16) + test_file[i+1] * test_file[i];
-        checksum += ROTLEFT(temp,16);
+    #ifdef MODE_ONE
+        checksum += test_file[i];
+    #else
+        checksum += ROTLEFT((test_file[i+3] * test_file[i+2] << 16) + test_file[i+1] * test_file[i],16);
+    #endif
     }
 
     return checksum;
@@ -89,15 +95,8 @@ int main(int argc, char **argv)
     uint8_t *dpu_buffers = (uint8_t*)calloc(nr_of_dpus, BUFFER_SIZE);
 
     #ifdef VERBOSE
-
     printf("[INFO] Iterations %i\n",iterations);
-
     printf("[INFO] SEED %i\n", SEED);
-
-    DPU_FOREACH (dpu_set, dpu) {
-       DPU_ASSERT(dpu_log_read(dpu, stdout));
-    }
-
     #endif
 
     printf("---------------------------------------------------------------------------------------\n");
@@ -118,11 +117,11 @@ int main(int argc, char **argv)
         printf("[INFO] - Run program on DPU(s)\n");
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-#ifdef READ_RESULT_FROM_MRAM
+    #ifdef READ_RESULT_FROM_MRAM
         printf("[INFO] - Retrieve results by MRAM\n");
-#else
+    #else
         printf("[INFO] - Retrieve results by CI\n");
-#endif
+    #endif
 #else
         printf("\r[INFO] PASS %i/%i .. ", i,iterations);
         printf("Load input data .. ");
@@ -131,15 +130,19 @@ int main(int argc, char **argv)
         printf("Run program on DPU(s) .. ");
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-#ifdef READ_RESULT_FROM_MRAM
+    #ifdef READ_RESULT_FROM_MRAM
         printf("Retrieve results by MRAM ");
-#else
+    #else
         printf("Retrieve results by CI ");
-#endif
+    #endif
         fflush(stdout);
 #endif
 
-
+    #ifdef VERBOSE
+    DPU_FOREACH (dpu_set, dpu) {
+       DPU_ASSERT(dpu_log_read(dpu, stdout));
+    }
+    #endif
 
         dpu_results_t results[nr_of_dpus];
         uint32_t each_dpu;
@@ -149,7 +152,7 @@ int main(int argc, char **argv)
         DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_RESULTS), 0, sizeof(dpu_results_t), DPU_XFER_DEFAULT));
 
         DPU_FOREACH (dpu_set, dpu, each_dpu) {
-            bool dpu_status;
+            bool dpu_status = true;
             for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
                 dpu_checksum[iter] = 0;
             dpu_cycles = 0;
@@ -164,13 +167,12 @@ int main(int argc, char **argv)
                     dpu_cycles = result->cycles;
             }
 
-            dpu_status = (dpu_checksum[0] == theoretical_checksum);
+            for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
+                dpu_status = (dpu_checksum[iter] == theoretical_checksum) && dpu_status;
+
             status = status && dpu_status;
 
             struct dpu_t *dpu_t = dpu_from_set(dpu);
-
-            //printf("[INFO] DPU execution time  = %g cycles\n", (double)dpu_cycles);
-            //printf("[INFO] Performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
 
             if (!dpu_status) {
                 printf("\n");

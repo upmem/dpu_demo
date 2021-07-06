@@ -19,11 +19,13 @@
 //#define VERBOSE   // Print info on stdout
 //#define PRINT_SEQ // Print info in sequential mode instead of flush stdout
 
-#define NB_CKSUM 1  // Run NB_CKSUM checksum(s) from one MRAM database
+#define NB_CKSUM 2  // Run NB_CKSUM checksum(s) from one MRAM database
 
 #define RELOAD_MRAM // Reload database from MRAM to WRAM for each DPU checksum, if NB_CKSUM > 1
 
 //#define READ_RESULT_FROM_MRAM //Read DPU checksum results from MRAM, or else by CI
+
+//#define MODE_ONE   // 
 
 typedef struct {
     uint32_t checksum[NB_CKSUM];

@@ -72,7 +72,6 @@ int main()
 #endif
 
     uint32_t checksum[NB_CKSUM] = {0};
-    uint32_t temp;
 //    char print_buffer[PRINT_BUFFER_SIZE];
 
     /* Initialize once the cycle counter */
@@ -93,8 +92,11 @@ int main()
 #endif
             /* computes the checksum of a cached block */
             for (uint32_t cache_idx = 0; cache_idx < BLOCK_SIZE; cache_idx = cache_idx + 4) {
-                temp = (cache[cache_idx+3] * cache[cache_idx+2] << 16) + cache[cache_idx+1] * cache[cache_idx];
-                checksum[iter] += ROTLEFT(temp,16);;
+    #ifdef MODE_ONE
+                checksum[iter] += cache[cache_idx];;
+    #else
+                checksum[iter] += ROTLEFT((cache[cache_idx+3] * cache[cache_idx+2] << 16) + cache[cache_idx+1] * cache[cache_idx],16);;
+    #endif
             }
         }
 
@@ -103,6 +105,7 @@ int main()
     for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
         result->checksum[iter] = checksum[iter];
     /* keep the 32-bit LSB on the 64-bit cycle counter */
+
     result->cycles = (uint32_t)perfcounter_get();
 
     #ifdef VERBOSE
