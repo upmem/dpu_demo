@@ -45,7 +45,12 @@
 #define PRINT_BUFFER_SIZE (11*NB_CKSUM + 25)
 
 __dma_aligned uint8_t DPU_CACHES[NR_TASKLETS][BLOCK_SIZE];
-__host dpu_results_t DPU_RESULTS;
+
+#ifdef READ_RESULT_FROM_MRAM
+    __mram_noinit dpu_results_t DPU_RESULTS;
+#else
+    __host        dpu_results_t DPU_RESULTS;
+#endif
 
 __mram_noinit uint8_t DPU_BUFFER[BUFFER_SIZE];
 
@@ -58,7 +63,14 @@ int main()
 {
     uint32_t tasklet_id = me();
     uint8_t *cache = DPU_CACHES[tasklet_id];
+
+
+#ifdef READ_RESULT_FROM_MRAM
+    __mram_ptr dpu_result_t *result = &DPU_RESULTS.tasklet_result[tasklet_id];
+#else
     dpu_result_t *result = &DPU_RESULTS.tasklet_result[tasklet_id];
+#endif
+
     uint32_t checksum[NB_CKSUM] = {0};
     uint32_t temp;
 //    char print_buffer[PRINT_BUFFER_SIZE];
@@ -87,7 +99,6 @@ int main()
         }
 
     }
-
 
     for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
         result->checksum[iter] = checksum[iter];
