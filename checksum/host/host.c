@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -87,8 +88,10 @@ int main(int argc, char **argv)
     const int iterations= argc > 1 ? atoi(argv[1]) : 0;
 
     DPU_ASSERT(dpu_alloc(NR_DPUS, NULL, &dpu_set));
-    DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
 
+    sleep(3);
+
+    DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("[INFO] Allocated %d DPU(s)\n", nr_of_dpus);
 
@@ -100,6 +103,11 @@ int main(int argc, char **argv)
     #endif
 
     printf("---------------------------------------------------------------------------------------\n");
+
+    #ifdef TEST_MUX
+    printf("[INFO] TEST MUX BEHAVIOR, wait ....\n");
+    sleep(10);
+    #endif
 
     srand(SEED);
 
@@ -138,11 +146,11 @@ int main(int argc, char **argv)
         fflush(stdout);
 #endif
 
-    #ifdef VERBOSE
-    DPU_FOREACH (dpu_set, dpu) {
-       DPU_ASSERT(dpu_log_read(dpu, stdout));
-    }
-    #endif
+#ifdef VERBOSE
+        DPU_FOREACH (dpu_set, dpu) {
+            DPU_ASSERT(dpu_log_read(dpu, stdout));
+        }
+#endif
 
         dpu_results_t results[nr_of_dpus];
         uint32_t each_dpu;
@@ -208,7 +216,6 @@ int main(int argc, char **argv)
     } else {
         printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] ONE OR MORE CHECKSUMS DIFFER !\n");
     }
-
 
     DPU_ASSERT(dpu_free(dpu_set));
     free(dpu_buffers);
