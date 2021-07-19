@@ -19,7 +19,7 @@
 //#define VERBOSE   // Print info on stdout
 //#define PRINT_SEQ // Print info in sequential mode instead of flush stdout
 
-#define NB_CKSUM 1  // Run NB_CKSUM checksum(s) from one MRAM database
+#define NB_CKSUM 2  // Run NB_CKSUM checksum(s) from one MRAM database
 
 #define RELOAD_MRAM // Reload database from MRAM to WRAM for each DPU checksum, if NB_CKSUM > 1
 
@@ -30,8 +30,8 @@
 //#define TEST_MUX  // Add sleep to check if MUX are failling
 
 typedef struct {
-    uint32_t checksum[NB_CKSUM];
-    uint32_t cycles;
+    uint64_t checksum[NB_CKSUM];
+    uint64_t cycles;
 } dpu_result_t;
 
 typedef struct {
