@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     uint32_t dpu_checksum[NB_CKSUM] = {0};
     uint32_t dpu_cycles;
     bool status = true;
-    const int iterations= argc > 1 ? atoi(argv[1]) : 0;
+    const int iterations= argc > 1 ? atoi(argv[1]) : 1;
 
     DPU_ASSERT(dpu_alloc(NR_DPUS, NULL, &dpu_set));
 
