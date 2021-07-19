@@ -89,8 +89,6 @@ int main(int argc, char **argv)
 
     DPU_ASSERT(dpu_alloc(NR_DPUS, NULL, &dpu_set));
 
-    sleep(3);
-
     DPU_ASSERT(dpu_load(dpu_set, DPU_BINARY, NULL));
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("[INFO] Allocated %d DPU(s)\n", nr_of_dpus);
