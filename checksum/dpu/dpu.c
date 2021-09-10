@@ -108,7 +108,7 @@ int main()
 
     result->cycles = (uint32_t)perfcounter_get();
 
-    #ifdef VERBOSE
+    #ifdef VERBOSE_EXT
     /*
     uint32_t n = 0;
     n = sprintf(print_buffer, "[%02d] Checksum =", tasklet_id);

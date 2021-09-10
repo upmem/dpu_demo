@@ -114,37 +114,26 @@ int main(int argc, char **argv)
         // Compute its theoretical checksum value.
         theoretical_checksum = create_test_file();
 
-#ifdef PRINT_SEQ
+#ifdef VERBOSE
         printf("[INFO] PASS %i/%i\n", i,iterations);
 
-        printf("[INFO] - Load input data\n");
+        printf("[INFO] Load input data\n");
         DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
-        printf("[INFO] - Run program on DPU(s)\n");
+        printf("[INFO] Run program on DPU(s)\n");
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
     #ifdef READ_RESULT_FROM_MRAM
-        printf("[INFO] - Retrieve results by MRAM\n");
+        printf("[INFO] Retrieve results by MRAM\n");
     #else
-        printf("[INFO] - Retrieve results by CI\n");
+        printf("[INFO] Retrieve results by CI\n");
     #endif
 #else
-        printf("\r[INFO] PASS %i/%i .. ", i,iterations);
-        printf("Load input data .. ");
         DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
-
-        printf("Run program on DPU(s) .. ");
         DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
-
-    #ifdef READ_RESULT_FROM_MRAM
-        printf("Retrieve results by MRAM ");
-    #else
-        printf("Retrieve results by CI ");
-    #endif
-        fflush(stdout);
 #endif
 
-#ifdef VERBOSE
+#ifdef VERBOSE_EXT
         DPU_FOREACH (dpu_set, dpu) {
             DPU_ASSERT(dpu_log_read(dpu, stdout));
         }
@@ -181,16 +170,20 @@ int main(int argc, char **argv)
             struct dpu_t *dpu_t = dpu_from_set(dpu);
 
             if (!dpu_status) {
-                printf("\n");
                 uint32_t rank_id = dpu_get_rank_id(dpu_get_rank(dpu_t)) & DPU_TARGET_MASK;
                 uint32_t ci_id = dpu_get_slice_id(dpu_t);
                 uint32_t dpu_id = dpu_get_member_id(dpu_t);
-                printf("[INFO] Checksum computed by the HOST = 0x%08x\n", theoretical_checksum);
-                printf("[INFO] Checksum computed by the DPU  =");
+                
+                #ifdef VERBOSE
+                  printf("[INFO] Checksum computed by the HOST = 0x%08x\n", theoretical_checksum);
+                  printf("[INFO] Checksum computed by the DPU  =");
+                
                 for(uint32_t iter = 0; iter < NB_CKSUM; iter++)
                     printf(" 0x%08x", dpu_checksum[iter]);
                 printf("\n");
-                printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ! => DPU %d.%d.%d\n", rank_id, ci_id, dpu_id);
+                #endif
+
+                printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] PASS %i/%i .. checksums differ! => DPU %d.%d.%d", i, iterations, rank_id, ci_id, dpu_id);
 
                 // checking integrity of the dpu buffer
                 // copy back the buffer to check its integrity
@@ -198,9 +191,9 @@ int main(int argc, char **argv)
                 DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_BUFFER), 0, BUFFER_SIZE, DPU_XFER_DEFAULT));
 
                 if((memcmp(test_file, &dpu_buffers[each_dpu * BUFFER_SIZE], BUFFER_SIZE))!=0)
-                    printf("[INFO] DPU input (MRAM) buffer is " ANSI_COLOR_RED "CORRUPTED" ANSI_COLOR_RESET "\n");
+                    printf(" but MRAM input buffer is " ANSI_COLOR_RED "CORRUPTED" ANSI_COLOR_RESET "\n");
                 else
-                    printf("[INFO] DPU input (MRAM) buffer is " ANSI_COLOR_GREEN "CORRECT" ANSI_COLOR_RESET "\n");
+                    printf(" and MRAM input buffer is " ANSI_COLOR_GREEN "CORRECT" ANSI_COLOR_RESET "\n");
 
                 }
             }
