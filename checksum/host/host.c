@@ -114,9 +114,9 @@ int main(int argc, char **argv)
         // Compute its theoretical checksum value.
         theoretical_checksum = create_test_file();
 
-#ifdef VERBOSE
         printf("[INFO] PASS %i/%i\n", i,iterations);
 
+#ifdef VERBOSE
         printf("[INFO] Load input data\n");
         DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
@@ -167,9 +167,8 @@ int main(int argc, char **argv)
 
             status = status && dpu_status;
 
-            struct dpu_t *dpu_t = dpu_from_set(dpu);
-
             if (!dpu_status) {
+                struct dpu_t *dpu_t = dpu_from_set(dpu);
                 uint32_t rank_id = dpu_get_rank_id(dpu_get_rank(dpu_t)) & DPU_TARGET_MASK;
                 uint32_t ci_id = dpu_get_slice_id(dpu_t);
                 uint32_t dpu_id = dpu_get_member_id(dpu_t);

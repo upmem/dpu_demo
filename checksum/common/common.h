@@ -19,7 +19,7 @@
 //#define VERBOSE       // Print info on stdout
 //#define VERBOSE_EXT   // Print more info on stdout
 
-#define NB_CKSUM 2  // Run NB_CKSUM checksum(s) from one MRAM database
+#define NB_CKSUM 24  // Run NB_CKSUM checksum(s) from one MRAM database
 
 //#define RELOAD_MRAM // Reload database from MRAM to WRAM for each DPU checksum, if NB_CKSUM > 1
 
