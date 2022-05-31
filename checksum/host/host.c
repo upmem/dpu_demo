@@ -20,6 +20,8 @@
  */
 
 #include <dpu.h>
+#include <dpu_management.h>
+#include <dpu_target_macros.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +46,6 @@ static uint8_t test_file[BUFFER_SIZE];
 static uint32_t create_test_file()
 {
     uint32_t checksum = 0;
-    srand(0);
 
     for (unsigned int i = 0; i < BUFFER_SIZE; i++) {
         test_file[i] = (unsigned char)(rand());
@@ -71,53 +72,58 @@ int main()
     DPU_ASSERT(dpu_get_nr_dpus(dpu_set, &nr_of_dpus));
     printf("Allocated %d DPU(s)\n", nr_of_dpus);
 
-    // Create an "input file" with arbitrary data.
-    // Compute its theoretical checksum value.
-    theoretical_checksum = create_test_file();
+    srand(0);
+    for(int i = 0; i < NR_ITER; i++) {
+        // Create an "input file" with arbitrary data.
+        // Compute its theoretical checksum value.
+        theoretical_checksum = create_test_file();
 
-    printf("Load input data\n");
-    DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
+        printf("Load input data\n");
+        DPU_ASSERT(dpu_copy_to(dpu_set, XSTR(DPU_BUFFER), 0, test_file, BUFFER_SIZE));
 
-    printf("Run program on DPU(s)\n");
-    DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
+        printf("Run program on DPU(s)\n");
+        DPU_ASSERT(dpu_launch(dpu_set, DPU_SYNCHRONOUS));
 
-    DPU_FOREACH (dpu_set, dpu) {
-        DPU_ASSERT(dpu_log_read(dpu, stdout));
-    }
-
-    printf("Retrieve results\n");
-    dpu_results_t results[nr_of_dpus];
-    uint32_t each_dpu;
-    DPU_FOREACH (dpu_set, dpu, each_dpu) {
-        DPU_ASSERT(dpu_prepare_xfer(dpu, &results[each_dpu]));
-    }
-    DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_RESULTS), 0, sizeof(dpu_results_t), DPU_XFER_DEFAULT));
-
-    DPU_FOREACH (dpu_set, dpu, each_dpu) {
-        bool dpu_status;
-        dpu_checksum = 0;
-        dpu_cycles = 0;
-
-        // Retrieve tasklet results and compute the final checksum.
-        for (unsigned int each_tasklet = 0; each_tasklet < NR_TASKLETS; each_tasklet++) {
-            dpu_result_t *result = &results[each_dpu].tasklet_result[each_tasklet];
-
-            dpu_checksum += result->checksum;
-            if (result->cycles > dpu_cycles)
-                dpu_cycles = result->cycles;
+        printf("Retrieve results\n");
+        dpu_results_t results[nr_of_dpus];
+        uint32_t each_dpu;
+        DPU_FOREACH (dpu_set, dpu, each_dpu) {
+            DPU_ASSERT(dpu_prepare_xfer(dpu, &results[each_dpu]));
         }
+        DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_FROM_DPU, XSTR(DPU_RESULTS), 0, sizeof(dpu_results_t), DPU_XFER_DEFAULT));
 
-        dpu_status = (dpu_checksum == theoretical_checksum);
-        status = status && dpu_status;
+        DPU_FOREACH (dpu_set, dpu, each_dpu) {
+            bool dpu_status;
+            dpu_checksum = 0;
+            dpu_cycles = 0;
 
-        printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
-        printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
-        printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
-        printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
-        if (dpu_status) {
-            printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
-        } else {
-            printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ!\n");
+            // Retrieve tasklet results and compute the final checksum.
+            for (unsigned int each_tasklet = 0; each_tasklet < NR_TASKLETS; each_tasklet++) {
+                dpu_result_t *result = &results[each_dpu].tasklet_result[each_tasklet];
+
+                dpu_checksum += result->checksum;
+                if (result->cycles > dpu_cycles)
+                    dpu_cycles = result->cycles;
+            }
+
+            dpu_status = (dpu_checksum == theoretical_checksum);
+            status = status && dpu_status;
+
+            struct dpu_t *dpu_t = dpu_from_set(dpu);
+            uint32_t rank_id = dpu_get_rank_id(dpu_get_rank(dpu_t)) & DPU_TARGET_MASK;
+            uint32_t ci_id = dpu_get_slice_id(dpu_t);
+            uint32_t dpu_id = dpu_get_member_id(dpu_t);
+
+            printf("DPU %d.%d.%d:\n", rank_id, ci_id, dpu_id);
+            printf("DPU execution time  = %g cycles\n", (double)dpu_cycles);
+            printf("performance         = %g cycles/byte\n", (double)dpu_cycles / BUFFER_SIZE);
+            printf("checksum computed by the DPU = 0x%08x\n", dpu_checksum);
+            printf("actual checksum value        = 0x%08x\n", theoretical_checksum);
+            if (dpu_status) {
+                printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] checksums are equal\n");
+            } else {
+                printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] checksums differ! => DPU %d.%d.%d\n", rank_id, ci_id, dpu_id);
+            }
         }
     }
 
