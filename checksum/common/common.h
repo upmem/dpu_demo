@@ -10,7 +10,7 @@
 #define DPU_RESULTS dpu_wram_results
 
 /* Size of the buffer on which the checksum will be performed */
-#define BUFFER_SIZE (8 << 20)
+#define BUFFER_SIZE (8U << 20U)
 
 /* Structure used by both the host and the dpu to communicate information */
 
